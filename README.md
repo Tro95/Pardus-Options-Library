@@ -5,7 +5,7 @@ Instructions:
  - At the top of your Tampermonkey script, ensure you have the following lines:
 ```
 // @grant           unsafeWindow
-// @require         https://gist.github.com/Tro95/3b102f4b834682bd2d2793b66e47845a/raw/pardus_options.js
+// @require         https://raw.githubusercontent.com/Tro95/Pardus-Options-Library/v1.1/pardus_options_library.js
 ```
 This will allow the unsafeWindow permision within your script, which is necessary to guarantee safe
 interactions with other scripts utilising this library also. This will also include the library
