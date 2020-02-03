@@ -205,8 +205,6 @@ function OptionsBox(id, number, heading, premium = false) {
  */
 function DescriptionElement(id) {
     this.id = id;
-    //this.front_container = '<tr ' + styling + '><td><table id=' + this.id + '><tbody><tr>';
-    //this styling = 'style="display: none;"';
     this.back_container = '</tr></tbody></table></td></tr>'
     this.description = '';
     this.image_left = '';
