@@ -7,11 +7,11 @@ var Options = (function() {
     var tabs = [];
     var tabs_element = null;
     var content_element = null;
-    
+
     function get_version() {
         return version;
     }
-    
+
     function initialise() {
 
         // HTML for both the options tabs and the content area
