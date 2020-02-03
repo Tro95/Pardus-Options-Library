@@ -2,7 +2,7 @@ var Options = (function() {
     'use strict';
 
     // Required for compatibility
-    var version = 1;
+    var version = 1.1;
 
     var tabs = [];
     var tabs_element = null;
