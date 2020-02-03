@@ -1,10 +1,17 @@
 var Options = (function() {
     'use strict';
 
+    // Required for compatibility
+    var version = 1;
+
     var tabs = [];
     var tabs_element = null;
     var content_element = null;
-
+    
+    function get_version() {
+        return version;
+    }
+    
     function initialise() {
 
         // HTML for both the options tabs and the content area
@@ -88,10 +95,25 @@ var Options = (function() {
         }
     }
 
-    //initialise();
-    //setAsActive('pardus-default');
+    function export_upgrade() {
+        return {
+            version: get_version(),
+            tabs: tabs,
+            tabs_element: tabs_element,
+            content_element: content_element      
+        };
+    }
+
+    function import_upgrade(import_vals = {tabs: [], tabs_element: null, content_element: null}) {
+        tabs = import_vals.tabs;
+        tabs_element = import_vals.tabs_element;
+        content_element = import_vals.content_element;
+    }
 
     return {
+        version: function() {
+            return get_version();
+        },
         addNewTab: function(label, id) {
             return addTab(label, id, null);
         },
@@ -105,6 +127,12 @@ var Options = (function() {
         create: function() {
             initialise();
             setAsActive('pardus-default');
+        },
+        export_upgrade: function() {
+            return export_upgrade();
+        },
+        import_upgrade: function(import_vals) {
+            import_upgrade(import_vals);
         }
     };
 
@@ -179,14 +207,25 @@ function htmlToElement(html) {
     template.innerHTML = html;
     return template.content.firstChild;
 }
- /**
+
+/**
   *  Add the Options object to the page for all scripts to use
   */
 if (document.location.pathname == '/options.php') {
-    if(typeof unsafeWindow.Options === 'undefined'|| !unsafeWindow.Options){
+    if(typeof unsafeWindow.Options === 'undefined' || !unsafeWindow.Options) {
         (function(){
             unsafeWindow.Options = Options;
             unsafeWindow.Options.create();
         })();
+    } else {
+
+        // Upgrade the version if two scripts use different ones
+        if (unsafeWindow.Options) {
+            if (unsafeWindow.Options.version() < Options.version()) {
+                console.log("Upgrading Pardus Options Library from version " + unsafeWindow.Options.version() + " to " + Options.version() + ".");
+                Options.import_upgrade(unsafeWindow.Options.export_upgrade());
+                unsafeWindow.Options = Options;
+            }
+        }
     }
 }
