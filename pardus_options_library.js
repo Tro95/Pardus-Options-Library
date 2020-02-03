@@ -100,7 +100,7 @@ var Options = (function() {
             version: get_version(),
             tabs: tabs,
             tabs_element: tabs_element,
-            content_element: content_element      
+            content_element: content_element
         };
     }
 
@@ -147,10 +147,11 @@ function OptionsContent(id) {
     this.addBox = function(heading, premium = false) {
         var new_box = null;
         if (this.left_boxes.length <= this.right_boxes.length) {
-            return this.addBoxLeft(heading, premium);
+            new_box = this.addBoxLeft(heading, premium);
         } else {
-            return this.addBoxRight(heading, premium);
+            new_box = this.addBoxRight(heading, premium);
         }
+        return new_box;
     };
     this.addBoxLeft = function(heading, premium = false) {
         var new_box = new OptionsBox(id + '-left', this.left_boxes.length, heading, premium);
@@ -158,6 +159,7 @@ function OptionsContent(id) {
         this.left_element.appendChild(document.createElement('br'));
         this.left_element.appendChild(document.createElement('br'));
         this.left_boxes.push(new_box);
+        new_box.initialise();
         return new_box;
     };
     this.addBoxRight = function(heading, premium = false) {
@@ -166,6 +168,7 @@ function OptionsContent(id) {
         this.right_element.appendChild(document.createElement('br'));
         this.right_element.appendChild(document.createElement('br'));
         this.right_boxes.push(new_box);
+        new_box.initialise();
         return new_box;
     };
     this.addPremiumBox = function(heading) {
@@ -189,15 +192,142 @@ function OptionsBox(id, number, heading, premium = false) {
     this.back_container = `</tbody></table></form>`;
     this.inner_html = ``;
     this.description = new DescriptionElement(this.id + '-description');
-    this.element = htmlToElement(this.front_container + this.description + this.inner_html + this.back_container);
+    this.options_group = new OptionsGroup(this.id + '-options-group', premium);
+    this.element = htmlToElement(this.front_container + this.description + this.inner_html + this.options_group + this.back_container);
     this.refreshElement = function() {
-        this.element = htmlToElement(this.front_container + this.description + this.inner_html + this.back_container);
+        this.element = htmlToElement(this.front_container + this.description + this.inner_html + this.options_group + this.back_container);
         document.getElementById(this.id).replaceWith(this.element);
+        this.options_group.setSaveButtonFunction();
     };
     this.setInnerHTML = function(inner_html_to_set) {
         this.inner_html = inner_html_to_set;
         this.refreshElement();
     };
+    this.initialise = function() {
+        this.options_group.setSaveButtonFunction();
+    }
+    this.addBooleanOption = function(variable_to_bind, text_description, default_value = false) {
+        var new_option = this.options_group.addBooleanOption(variable_to_bind, text_description, default_value);
+        this.refreshElement();
+        new_option.initialiseValue();
+    }
+}
+
+function OptionsGroup(id, premium = false) {
+    this.id = id;
+    this.options = [];
+    this.front_container = {
+        styling: 'style="display: none;"',
+        id: '',
+        setId: function(id) {
+            this.id = id
+        },
+        setStyle: function(style) {
+            this.styling = 'style="' + style + '"';
+        },
+        toString: function() {
+            return '<tr id="' + this.id + '" ' + this.styling + '><td><table><tbody>';
+        }
+    }
+    this.front_container.setId(id);
+    this.back_container = '</tbody></table></td></tr>';
+    this.save_button = '<tr><td align="right"><input value="Save" id="' + this.id + '-save-button" type="button"></td></tr>';
+    this.premium = premium;
+
+    if (this.premium) {
+        this.save_button = '<tr><td align="right"><input value="Save" id="' + this.id + '-save-button" type="button" style="color:#FFCC11"></td></tr>';
+    }
+
+    this.addOption = function() {
+        return;
+    }
+    this.addBooleanOption = function(variable_to_bind, text_description, default_value = false) {
+        var new_option = new BooleanOption(this.id + '-option-' + this.options.length, variable_to_bind, text_description, default_value);
+        this.options.push(new_option);
+        return new_option;
+    }
+    this.setSaveButtonFunction = function() {
+        var _this = this;
+
+        function saveButtonFunction() {
+            var i = 0;
+            for (i = 0; i < _this.options.length; i++) {
+                _this.options[i].saveValue();
+            }
+            if (_this.premium) {
+                displayPremiumSaved(_this.id + '-save-button');
+            } else {
+                displaySaved(_this.id + '-save-button');
+            }
+        }
+
+        function displaySaved(id) {
+            var save_button = document.getElementById(id);
+            save_button.setAttribute('disabled', 'true');
+            save_button.value = 'Saved';
+            save_button.setAttribute('style', 'color:green;background-color:silver');
+            setTimeout(function() {
+                save_button.removeAttribute('disabled');
+                save_button.value = 'Save';
+                save_button.removeAttribute('style');
+            }, 2000);
+        }
+
+        function displayPremiumSaved(id) {
+            var save_button = document.getElementById(id);
+            save_button.setAttribute('disabled', 'true');
+            save_button.value = 'Saved';
+            save_button.setAttribute('style', 'color:green;background-color:silver');
+            setTimeout(function() {
+                save_button.removeAttribute('disabled');
+                save_button.value = 'Save';
+                save_button.setAttribute('style', 'color:#FFCC11');
+            }, 2000);
+        }
+
+        if (document.getElementById(this.id + '-save-button')) {
+            if (document.getElementById(this.id + '-save-button').addEventListener) {
+                document.getElementById(this.id + '-save-button').addEventListener("click", saveButtonFunction, false);
+            } else if (document.getElementById(this.id + '-save-button').attachEvent) {
+                document.getElementById(this.id + '-save-button').attachEvent('onclick', saveButtonFunction);
+            }
+        } else {
+            console.log("No element '" + this.id + "-save-button'.");
+        }
+    }
+    this.initialiseValues = function() {
+        var i = 0;
+        for (i = 0; i < options.length; i++) {
+            options[i].initialiseValue();
+        }        
+    }
+    this.toString = function() {
+
+        // If no options have been defined, then don't add any elements
+        if (this.options.length == 0) {
+            this.front_container.setStyle("display: none;");
+        } else {
+            this.front_container.setStyle("");
+        }
+
+        return this.front_container + this.options.join('') + this.back_container + this.save_button;
+    }
+}
+
+function BooleanOption(id, variable_to_bind, text_description, default_value = false) {
+    this.id = id;
+    this.type = 'checkbox';
+    this.variable_to_bind = variable_to_bind;
+    this.text_description = text_description;
+    this.toString = function() {
+        return '<tr><td>' + this.text_description + '</td><td><input id="' + this.id + '" type="' + this.type + '"></td></tr>';
+    }
+    this.initialiseValue = function() {
+        document.getElementById(this.id).checked = GM_getValue(get_universe() + "_" + this.variable_to_bind, default_value);
+    }
+    this.saveValue = function() {
+        GM_setValue(get_universe() + "_" + this.variable_to_bind, document.getElementById(this.id).checked);
+    }
 }
 
 /**
@@ -240,7 +370,7 @@ function DescriptionElement(id) {
             this.front_container.setStyle("display: none;");
         } else {
             this.front_container.setStyle("");
-        }        
+        }
 
         this.refreshElement();
     }
@@ -259,6 +389,24 @@ function DescriptionElement(id) {
         this.element = htmlToElement(this.toString());
         document.getElementById(this.id).replaceWith(this.element);
     };
+}
+
+function get_universe() {
+    var universe = '';
+
+    switch (document.location.hostname) {
+        case "orion.pardus.at":
+            universe = "orion";
+            break;
+        case "artemis.pardus.at":
+            universe = "artemis";
+            break;
+        case "pegasus.pardus.at":
+            universe = "pegasus";
+            break;
+    }
+
+    return universe;
 }
 
 /**
