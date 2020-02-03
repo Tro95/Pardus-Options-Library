@@ -2,7 +2,7 @@ var Options = (function() {
     'use strict';
 
     // Required for compatibility
-    var version = 1.1;
+    var version = 1.2;
 
     var tabs = [];
     var tabs_element = null;
@@ -188,14 +188,78 @@ function OptionsBox(id, number, heading, premium = false) {
     this.front_container = `<form id="` + this.id + `" action="none"><table style="background:url(//static.pardus.at/img/std/bgd.gif)" width="100%" cellpadding="3" align="center"><tbody><tr>` + header_html + heading + `</th></tr>`;
     this.back_container = `</tbody></table></form>`;
     this.inner_html = ``;
-    this.element = htmlToElement(this.front_container + this.inner_html + this.back_container);
+    this.description = new DescriptionElement(this.id + '-description');
+    this.element = htmlToElement(this.front_container + this.description + this.inner_html + this.back_container);
     this.refreshElement = function() {
-        this.element = htmlToElement(this.front_container + this.inner_html + this.back_container);
+        this.element = htmlToElement(this.front_container + this.description + this.inner_html + this.back_container);
         document.getElementById(this.id).replaceWith(this.element);
     };
     this.setInnerHTML = function(inner_html_to_set) {
         this.inner_html = inner_html_to_set;
         this.refreshElement();
+    };
+}
+
+/**
+ *  Controls the description for a specific OptionsBox, only one description per OptionsBox permitted
+ */
+function DescriptionElement(id) {
+    this.id = id;
+    //this.front_container = '<tr ' + styling + '><td><table id=' + this.id + '><tbody><tr>';
+    //this styling = 'style="display: none;"';
+    this.back_container = '</tr></tbody></table></td></tr>'
+    this.description = '';
+    this.image_left = '';
+    this.image_right = '';
+    this.alignment = 'center';
+    this.front_container = {
+        styling: 'style="display: none;"',
+        id: '',
+        setId: function(id) {
+            this.id = id
+        },
+        setStyle: function(style) {
+            this.styling = 'style="' + style + '"';
+        },
+        toString: function() {
+            return '<tr id=' + this.id + ' ' + this.styling + '><td><table><tbody><tr>';
+        }
+    }
+    this.front_container.setId(id);
+    this.element = htmlToElement(this.toString());
+    this.addImageLeft = function(image_src) {
+        this.image_left = '<td><img src="' + image_src + '"></td>';
+        this.refreshElement();
+    }
+    this.addImageRight = function(image_src) {
+        this.image_right = '<td><img src="' + image_src + '"></td>';
+        this.refreshElement();
+    }
+    this.setDescription = function(description_to_set) {
+        this.description = description_to_set;
+
+        if (this.description == '') {
+            this.front_container.setStyle("display: none;");
+        } else {
+            this.front_container.setStyle("");
+        }        
+
+        this.refreshElement();
+    }
+    this.setAlignment = function(alignment) {
+        this.alignment = alignment;
+        this.refreshElement();
+    }
+
+    /**
+     *  Converts the DescriptionElement into its html form.
+     */
+    this.toString = function() {
+        return this.front_container + this.image_left + '<td align="' + this.alignment + '">' + this.image_right + this.description + '</td>' + this.back_container;
+    }
+    this.refreshElement = function() {
+        this.element = htmlToElement(this.toString());
+        document.getElementById(this.id).replaceWith(this.element);
     };
 }
 
