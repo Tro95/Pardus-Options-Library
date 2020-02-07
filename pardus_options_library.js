@@ -373,7 +373,6 @@ function OptionsContent(id, saveFunction = defaultSaveFunction, getFunction = de
         } else {
             newBox = this.addBoxRight(heading, premium, customSaveFunction, customGetFunction);
         }
-        console.log(newBox);
         return newBox;
     };
     this.addBoxLeft = (heading, premium = false, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => {
