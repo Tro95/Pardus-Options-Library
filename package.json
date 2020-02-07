@@ -1,0 +1,25 @@
+{
+  "name": "pardus-options-library",
+  "version": "1.0.0",
+  "description": "The Pardus Options Library is a script designed to add useful and easy ways to interact with  the Options page within other scripts related to the online game Pardus (https://pardus.at).",
+  "main": "pardus_options_library.js",
+  "dependencies": {},
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.20.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tro95/Pardus-Options-Library.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Tro95/Pardus-Options-Library/issues"
+  },
+  "homepage": "https://github.com/Tro95/Pardus-Options-Library#readme"
+}
