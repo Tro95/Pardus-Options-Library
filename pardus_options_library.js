@@ -44,8 +44,8 @@ function DescriptionElement(id) {
     this.id = id;
     this.backContainer = '</tr></tbody></table></td></tr>';
     this.description = '';
-    this.image_left = '';
-    this.image_right = '';
+    this.imageLeft = '';
+    this.imageRight = '';
     this.alignment = 'center';
     this.frontContainer = {
         styling: 'style="display: none;"',
@@ -63,11 +63,11 @@ function DescriptionElement(id) {
     this.frontContainer.setId(id);
     this.element = htmlToElement(this.toString());
     this.addImageLeft = (imageSrc) => {
-        this.image_left = `<td><img src="${imageSrc}"></td>`;
+        this.imageLeft = `<td><img src="${imageSrc}"></td>`;
         this.refreshElement();
     };
     this.addImageRight = (imageSrc) => {
-        this.image_right = `<td><img src="${imageSrc}"></td>`;
+        this.imageRight = `<td><img src="${imageSrc}"></td>`;
         this.refreshElement();
     };
     this.setDescription = (descriptionToSet) => {
@@ -89,7 +89,7 @@ function DescriptionElement(id) {
     /**
      *  Converts the DescriptionElement into its html form.
      */
-    this.toString = () => `${this.frontContainer + this.image_left}<td align="${this.alignment}">${this.image_right}${this.description}</td>${this.backContainer}`;
+    this.toString = () => `${this.frontContainer + this.imageLeft}<td align="${this.alignment}">${this.imageRight}${this.description}</td>${this.backContainer}`;
     this.refreshElement = () => {
         this.element = htmlToElement(this.toString());
         document.getElementById(this.id).replaceWith(this.element);
@@ -362,34 +362,35 @@ function OptionsContent(id, saveFunction = defaultSaveFunction, getFunction = de
     this.id = id;
     this.saveFunction = saveFunction;
     this.getFunction = getFunction;
-    this.left_boxes = [];
-    this.right_boxes = [];
-    this.left_element = document.getElementById(`options-content-${id.toString()}-left`);
-    this.right_element = document.getElementById(`options-content-${id.toString()}-right`);
+    this.leftBoxes = [];
+    this.rightBoxes = [];
+    this.leftElement = document.getElementById(`options-content-${id.toString()}-left`);
+    this.rightElement = document.getElementById(`options-content-${id.toString()}-right`);
     this.addBox = (heading, premium = false, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => {
         let newBox = null;
-        if (this.left_boxes.length <= this.right_boxes.length) {
+        if (this.leftBoxes.length <= this.rightBoxes.length) {
             newBox = this.addBoxLeft(heading, premium, customSaveFunction, customGetFunction);
         } else {
             newBox = this.addBoxRight(heading, premium, customSaveFunction, customGetFunction);
         }
+        console.log(newBox);
         return newBox;
     };
     this.addBoxLeft = (heading, premium = false, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => {
-        const newBox = new OptionsBox(`${id}-left`, this.left_boxes.length, heading, premium, customSaveFunction, customGetFunction);
-        this.left_element.appendChild(newBox.element);
-        this.left_element.appendChild(document.createElement('br'));
-        this.left_element.appendChild(document.createElement('br'));
-        this.left_boxes.push(newBox);
+        const newBox = new OptionsBox(`${id}-left`, this.leftBoxes.length, heading, premium, customSaveFunction, customGetFunction);
+        this.leftElement.appendChild(newBox.element);
+        this.leftElement.appendChild(document.createElement('br'));
+        this.leftElement.appendChild(document.createElement('br'));
+        this.leftBoxes.push(newBox);
         newBox.initialise();
         return newBox;
     };
     this.addBoxRight = (heading, premium = false, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => {
-        const newBox = new OptionsBox(`${id}-right`, this.right_boxes.length, heading, premium, customSaveFunction, customGetFunction);
-        this.right_element.appendChild(newBox.element);
-        this.right_element.appendChild(document.createElement('br'));
-        this.right_element.appendChild(document.createElement('br'));
-        this.right_boxes.push(newBox);
+        const newBox = new OptionsBox(`${id}-right`, this.rightBoxes.length, heading, premium, customSaveFunction, customGetFunction);
+        this.rightElement.appendChild(newBox.element);
+        this.rightElement.appendChild(document.createElement('br'));
+        this.rightElement.appendChild(document.createElement('br'));
+        this.rightBoxes.push(newBox);
         newBox.initialise();
         return newBox;
     };
@@ -421,15 +422,15 @@ const Options = (function initOptions() {
     function setAsActive(id) {
         for (let i = 0; i < tabs.length; i += 1) {
             if (tabs[i].id !== id) {
-                tabs[i].tab_element.setAttribute('style', "background: transparent url('//static.pardus.at/img/std/tab.png') repeat scroll 0% 0%; cursor: default;");
-                tabs[i].tab_element.setAttribute('onmouseover', "this.style.background='url(//static.pardus.at/img/std/tabactive.png)';this.style.cursor='default'");
-                tabs[i].tab_element.setAttribute('onmouseout', "this.style.background='url(//static.pardus.at/img/std/tab.png)'");
+                tabs[i].tabElement.setAttribute('style', "background: transparent url('//static.pardus.at/img/std/tab.png') repeat scroll 0% 0%; cursor: default;");
+                tabs[i].tabElement.setAttribute('onmouseover', "this.style.background='url(//static.pardus.at/img/std/tabactive.png)';this.style.cursor='default'");
+                tabs[i].tabElement.setAttribute('onmouseout', "this.style.background='url(//static.pardus.at/img/std/tab.png)'");
                 tabs[i].contentElement.setAttribute('hidden', '');
                 tabs[i].active = false;
             } else {
-                tabs[i].tab_element.setAttribute('style', "background: transparent url('//static.pardus.at/img/std/tabactive.png') repeat scroll 0% 0%; cursor: default;");
-                tabs[i].tab_element.setAttribute('onmouseover', "this.style.cursor='default'");
-                tabs[i].tab_element.removeAttribute('onmouseout');
+                tabs[i].tabElement.setAttribute('style', "background: transparent url('//static.pardus.at/img/std/tabactive.png') repeat scroll 0% 0%; cursor: default;");
+                tabs[i].tabElement.setAttribute('onmouseover', "this.style.cursor='default'");
+                tabs[i].tabElement.removeAttribute('onmouseout');
                 tabs[i].contentElement.removeAttribute('hidden');
                 tabs[i].active = true;
             }
@@ -450,11 +451,11 @@ const Options = (function initOptions() {
             label,
             id: id.toString(),
             contentElement: tmpContentElement,
-            tab_element: createTabElement(label, id),
+            tabElement: createTabElement(label, id),
         };
 
-        newTab.tab_element.addEventListener('click', () => setAsActive(newTab.id), true);
-        tabsElement.childNodes[0].childNodes[0].appendChild(newTab.tab_element);
+        newTab.tabElement.addEventListener('click', () => setAsActive(newTab.id), true);
+        tabsElement.childNodes[0].childNodes[0].appendChild(newTab.tabElement);
         tabsElement.width = (tabs.length + 1) * 96;
         contentElement.childNodes[0].appendChild(newTab.contentElement);
         tabs.push(newTab);
@@ -488,7 +489,7 @@ const Options = (function initOptions() {
         tabsElement.width = tabs.length * 96;
         tabsElement.childNodes[0].childNodes[0].innerHTML = '';
         for (let i = 0; i < tabs.length; i += 1) {
-            tabsElement.childNodes[0].childNodes[0].appendChild(tabs[i].tab_element);
+            tabsElement.childNodes[0].childNodes[0].appendChild(tabs[i].tabElement);
         }
     } */
 
@@ -543,7 +544,7 @@ if (document.location.pathname === '/options.php') {
     if (typeof unsafeWindow.Options === 'undefined' || !unsafeWindow.Options) {
         unsafeWindow.Options = Options;
         unsafeWindow.Options.create();
-    } else if (unsafeWindow.Options && (unsafeWindow.Options.version() < Options.version())) {
+    } else if (unsafeWindow.Options && typeof unsafeWindow.Options.version === 'function' && unsafeWindow.Options.version() < Options.version()) {
         // Upgrade the version if two scripts use different ones
         // console.log(`Upgrading Pardus Options Library from version ${unsafeWindow.Options.version()} to ${Options.version()}.`);
         Options.importUpgrade(unsafeWindow.Options.exportUpgrade());
