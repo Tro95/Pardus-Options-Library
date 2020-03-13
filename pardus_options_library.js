@@ -37,40 +37,69 @@ function htmlToElement(html) {
     return template.content.firstChild;
 }
 
+class HtmlElement {
+    constructor(id) {
+        this.id = id;
+    }
+
+    toString() {
+        return `<div id='${this.id}'></div>`;
+    }
+
+    refreshElement() {
+        this.getElement().replaceWith(this.toElement());
+    }
+
+    getElement() {
+        return document.getElementById(this.id);
+    }
+
+    toElement() {
+        const template = document.createElement('template');
+        template.innerHTML = this.toString();
+        return template.content.firstChild;
+    }
+}
+
 /**
  *  Controls the description for a specific OptionsBox, only one description per OptionsBox permitted
  */
-function DescriptionElement(id) {
-    this.id = id;
-    this.backContainer = '</tr></tbody></table></td></tr>';
-    this.description = '';
-    this.imageLeft = '';
-    this.imageRight = '';
-    this.alignment = 'center';
-    this.frontContainer = {
-        styling: 'style="display: none;"',
-        id: '',
-        setId(idToSet) {
-            this.id = idToSet;
-        },
-        setStyle(style) {
-            this.styling = `style="${style}"`;
-        },
-        toString() {
-            return `<tr id=${this.id} ${this.styling}><td><table><tbody><tr>`;
-        },
-    };
-    this.frontContainer.setId(id);
-    this.element = htmlToElement(this.toString());
-    this.addImageLeft = (imageSrc) => {
+class DescriptionElement extends HtmlElement {
+    constructor(id) {
+        super(id);
+        this.backContainer = '</tr></tbody></table></td></tr>';
+        this.description = '';
+        this.imageLeft = '';
+        this.imageRight = '';
+        this.alignment = 'center';
+        this.frontContainer = {
+            styling: 'style="display: none;"',
+            id: '',
+            setId(idToSet) {
+                this.id = idToSet;
+            },
+            setStyle(style) {
+                this.styling = `style="${style}"`;
+            },
+            toString() {
+                return `<tr id=${this.id} ${this.styling}><td><table><tbody><tr>`;
+            },
+        };
+        this.frontContainer.setId(id);
+        this.element = htmlToElement(this.toString());
+    }
+
+    addImageLeft(imageSrc) {
         this.imageLeft = `<td><img src="${imageSrc}"></td>`;
         this.refreshElement();
-    };
-    this.addImageRight = (imageSrc) => {
+    }
+
+    addImageRight(imageSrc) {
         this.imageRight = `<td><img src="${imageSrc}"></td>`;
         this.refreshElement();
-    };
-    this.setDescription = (descriptionToSet) => {
+    }
+
+    setDescription(descriptionToSet) {
         this.description = descriptionToSet;
 
         if (this.description === '') {
@@ -80,173 +109,399 @@ function DescriptionElement(id) {
         }
 
         this.refreshElement();
-    };
-    this.setAlignment = (alignment) => {
+    }
+
+    setAlignment(alignment) {
         this.alignment = alignment;
         this.refreshElement();
-    };
+    }
 
-    /**
-     *  Converts the DescriptionElement into its html form.
-     */
-    this.toString = () => `${this.frontContainer + this.imageLeft}<td align="${this.alignment}">${this.imageRight}${this.description}</td>${this.backContainer}`;
-    this.refreshElement = () => {
-        this.element = htmlToElement(this.toString());
-        document.getElementById(this.id).replaceWith(this.element);
-    };
+    toString() {
+        return `${this.frontContainer + this.imageLeft}<td align="${this.alignment}">${this.imageRight}${this.description}</td>${this.backContainer}`;
+    }
 }
 
-function BooleanOption(id, variableToBind, textDescription, defaultValue = false, saveFunction = defaultSaveFunction, getFunction = defaultGetFunction) {
-    this.id = id;
-    this.saveFunction = saveFunction;
-    this.getFunction = getFunction;
-    this.type = 'checkbox';
-    this.variableToBind = variableToBind;
-    this.textDescription = textDescription;
-    this.toString = () => {
+class AbstractOption extends HtmlElement {
+    constructor({
+        id,
+        variable,
+        description,
+        defaultValue = false,
+        saveFunction = defaultSaveFunction,
+        getFunction = defaultGetFunction,
+        shallow = false,
+    }) {
+        super(id);
+        this.variable = variable;
+        this.saveFunction = saveFunction;
+        this.getFunction = getFunction;
+        this.textDescription = description;
+        this.defaultValue = defaultValue;
+        this.inputId = `${this.id}-input`;
+        this.shallow = shallow;
+    }
+
+    toString() {
+        if (this.shallow) {
+            return `<td id='${this.id}'>${this.getInnerHTML()}<label>${this.textDescription}</label></td>`;
+        }
+        return `<tr id='${this.id}'><td>${this.textDescription}</td><td>${this.getInnerHTML()}</td></tr>`;
+    }
+
+    getInnerHTML() {
+        return '';
+    }
+
+    getValue() {
+        return this.getFunction(`${getUniverse()}_${this.variable}`, this.defaultValue);
+    }
+
+    getCurrentValue() {
+        return null;
+    }
+
+    getInputElement() {
+        return document.getElementById(this.inputId);
+    }
+
+    saveValue() {
+        this.saveFunction(`${getUniverse()}_${this.variable}`, this.getCurrentValue());
+    }
+}
+
+class BooleanOption extends AbstractOption {
+    getInnerHTML() {
         let checkedStatus = '';
         if (this.getValue() === true) {
             checkedStatus = ' checked';
         }
-        return `<tr><td>${this.textDescription}</td><td><input id="${this.id}" type="checkbox"${checkedStatus}></td></tr>`;
-    };
-    this.initialiseValue = () => {
+        return `<input id="${this.inputId}" type="checkbox"${checkedStatus}>`;
+    }
 
-    };
-    this.getValue = () => this.getFunction(`${getUniverse()}_${this.variableToBind}`, defaultValue);
-    this.saveValue = () => {
-        // Save function is required due to Tampermonkey script scoping, otherwise all
-        // scripts would GM_setValue to the first script to initiate the library.
-        this.saveFunction(`${getUniverse()}_${this.variableToBind}`, document.getElementById(this.id).checked);
-    };
-    this.setFunctions = () => {
-
-    };
+    getCurrentValue() {
+        return this.getInputElement().checked;
+    }
 }
 
-function NumericOption(id, variableToBind, textDescription, defaultValue = 0, minValue = 0, maxValue = 0, saveFunction = defaultSaveFunction, getFunction = defaultGetFunction) {
-    this.id = id;
-    this.saveFunction = saveFunction;
-    this.getFunction = getFunction;
-    this.type = 'checkbox';
-    this.variableToBind = variableToBind;
-    this.textDescription = textDescription;
-    this.toString = () => `<tr><td>${this.textDescription}</td><td><input id="${this.id}" type="number" min="${minValue}" max="${maxValue}" value="${this.getValue()}"></td></tr>`;
-    this.initialiseValue = () => {
+class NumericOption extends AbstractOption {
+    constructor({
+        id,
+        variable,
+        description,
+        defaultValue = 0,
+        saveFunction = defaultSaveFunction,
+        getFunction = defaultGetFunction,
+        min = 0,
+        max = 0,
+        step = 1,
+    }) {
+        super({
+            id,
+            variable,
+            description,
+            defaultValue,
+            saveFunction,
+            getFunction,
+        });
+        this.minValue = min;
+        this.maxValue = max;
+        this.stepValue = step;
+    }
 
-    };
-    this.getValue = () => this.getFunction(`${getUniverse()}_${this.variableToBind}`, defaultValue);
-    this.saveValue = () => {
-        // Save function is required due to Tampermonkey script scoping, otherwise all
-        // scripts would GM_setValue to the first script to initiate the library.
-        this.saveFunction(`${getUniverse()}_${this.variableToBind}`, document.getElementById(this.id).value);
-    };
+    getInnerHTML() {
+        return `<input id="${this.inputId}" type="number" min="${this.minValue}" max="${this.maxValue}" step="${this.stepValue}" value="${this.getValue()}">`;
+    }
+
+    getCurrentValue() {
+        return this.getInputElement().value;
+    }
 }
 
-function SelectOption(id, variableToBind, textDescription, options = [], defaultValue = null, saveFunction = defaultSaveFunction, getFunction = defaultGetFunction) {
-    this.id = id;
-    this.saveFunction = saveFunction;
-    this.getFunction = getFunction;
-    this.type = 'checkbox';
-    this.variableToBind = variableToBind;
-    this.textDescription = textDescription;
-    this.options = options;
-    this.toString = () => {
-        const selectHtml = `<tr><td>${this.textDescription}</td><td>${this.getInnerHTML()}</td></tr>`;
-        return selectHtml;
-    };
-    this.getInnerHTML = () => {
-        let selectHtml = `<select id="${this.id}">`;
+class SelectOption extends AbstractOption {
+    constructor({
+        id,
+        variable,
+        description,
+        defaultValue = null,
+        saveFunction = defaultSaveFunction,
+        getFunction = defaultGetFunction,
+        options = [],
+    }) {
+        super({
+            id,
+            variable,
+            description,
+            defaultValue,
+            saveFunction,
+            getFunction,
+        });
+        this.options = options;
+    }
+
+    getInnerHTML() {
+        let selectHtml = `<select id="${this.inputId}">`;
         const savedValue = this.getValue();
         let hasSelected = false;
-        for (let i = 0; i < this.options.length; i += 1) {
-            if (!hasSelected && (this.options[i].value === savedValue || (this.options[i].default && this.options[i].default === true))) {
-                selectHtml += `<option value=${this.options[i].value} selected>${this.options[i].text}</option>`;
+        for (const option of this.options) {
+            if (!hasSelected && (option.value === savedValue || (option.default && option.default === true))) {
+                selectHtml += `<option value=${option.value} selected>${option.text}</option>`;
                 hasSelected = true;
             } else {
-                selectHtml += `<option value=${this.options[i].value}>${this.options[i].text}</option>`;
+                selectHtml += `<option value=${option.value}>${option.text}</option>`;
             }
         }
 
         return selectHtml;
-    };
-    this.initialiseValue = () => {
-
-    };
-    this.getValue = () => this.getFunction(`${getUniverse()}_${this.variableToBind}`, defaultValue);
-    this.getCurrentValue = () => this.getElement().value;
-    this.saveValue = () => {
-        // Save function is required due to Tampermonkey script scoping, otherwise all
-        // scripts would GM_setValue to the first script to initiate the library.
-        this.saveFunction(`${getUniverse()}_${this.variableToBind}`, this.getCurrentValue());
-    };
-    this.refreshElement = () => {
-        this.element = htmlToElement(this.getInnerHTML());
-        this.getElement().replaceWith(this.element);
-    };
-    this.getElement = () => document.getElementById(this.id);
-}
-
-function OptionsGroup(id, premium = false, saveFunction = defaultSaveFunction, getFunction = defaultGetFunction) {
-    this.id = id;
-    this.saveFunction = saveFunction;
-    this.getFunction = getFunction;
-    this.options = [];
-    this.frontContainer = {
-        styling: 'style="display: none;"',
-        id: '',
-        setId(idToSet) {
-            this.id = idToSet;
-        },
-        setStyle(style) {
-            this.styling = `style="${style}"`;
-        },
-        toString() {
-            return `<tr id="${this.id}" ${this.styling}><td><table><tbody>`;
-        },
-    };
-    this.frontContainer.setId(id);
-    this.backContainer = '</tbody></table></td></tr>';
-    this.saveButtonFrontContainer = {
-        styling: 'style="display: none;"',
-        id: '',
-        setId(idToSet) {
-            this.id = idToSet;
-        },
-        setStyle(style) {
-            this.styling = `style="${style}"`;
-        },
-        toString() {
-            return `<tr id="${this.id}" ${this.styling}>`;
-        },
-    };
-    this.saveButtonFrontContainer.setId(`${id}-save-button-row`);
-    this.saveButton = `<td align="right"><input value="Save" id="${this.id}-save-button" type="button"></td>`;
-    this.saveButtonBackContainer = '</tr>';
-    this.premium = premium;
-    if (this.premium) {
-        this.saveButton = `<td align="right"><input value="Save" id="${this.id}-save-button" type="button" style="color:#FFCC11"></td>`;
     }
 
-    this.addOption = () => {
+    getOptions() {
+        return this.options;
+    }
 
-    };
-    this.addBooleanOption = (variableToBind, textDescription, defaultValue = false, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => {
-        const newOption = new BooleanOption(`${this.id}-option-${this.options.length}`, variableToBind, textDescription, defaultValue, customSaveFunction, customGetFunction);
+    setOptions(options = []) {
+        this.options = options;
+    }
+
+    getCurrentValue() {
+        return this.getInputElement().value;
+    }
+}
+
+/*
+class AbstractArrayOption extends AbstractOption {
+    constructor({
+        id,
+        variable,
+        description,
+        defaultValue = [],
+        saveFunction = defaultSaveFunction,
+        getFunction = defaultGetFunction,
+    }) {
+        super({
+            id,
+            variable,
+            description,
+            defaultValue,
+            saveFunction,
+            getFunction,
+        });
+    }
+
+    toString() {
+        return `<tr id="${this.id}"><td>${this.description}</td><td>${this.getInnerHTML()}</td></tr>`;
+    }
+
+    getInnerHTML() {
+        let html = '<table><tbody>';
+        const currentValues = this.getValue();
+
+        for (value of currentValues) {
+            html += `<tr><td><input type="text" value="${value}"></td><td><input type="button" value="-"></td></tr>`;
+        }
+        html += `<tr><td><input type="text" value="${value}"></td><td><input type="button" value="+"></td></tr>`;
+        html += '</tbody></table>';
+        return html;
+    }
+
+
+}*/
+
+class GroupedOptions extends HtmlElement {
+    constructor({
+        id,
+        description,
+        saveFunction = defaultSaveFunction,
+        getFunction = defaultGetFunction,
+    }) {
+        super(id);
+        this.description = description;
+        this.saveFunction = saveFunction;
+        this.getFunction = getFunction;
+        this.options = [];
+    }
+
+    toString() {
+        return `<tr id="${this.id}"><td>${this.description}</td><td>${this.getInnerHTML()}</td></tr>`;
+    }
+
+    getInnerHTML() {
+        let html = '<table><tbody><tr>';
+        for (const option of this.options) {
+            html += option;
+        }
+        html += '</tr></tbody></table>';
+        return html;
+    }
+
+    saveValue() {
+        for (const option of this.options) {
+            option.saveValue();
+        }
+    }
+
+    addBooleanOption({
+        variable,
+        description,
+        defaultValue = false,
+        saveFunction = this.saveFunction,
+        getFunction = this.getFunction,
+    }) {
+        const booleanOptions = {
+            id: `${this.id}-option-${this.options.length}`,
+            variable,
+            description,
+            defaultValue,
+            saveFunction,
+            getFunction,
+            shallow: true,
+        };
+
+        const newBooleanOption = new BooleanOption(booleanOptions);
+
+        this.options.push(newBooleanOption);
+        this.refreshElement();
+        return newBooleanOption;
+    }
+}
+
+class OptionsGroup extends HtmlElement {
+    constructor({
+        id,
+        premium = false,
+        saveFunction = defaultSaveFunction,
+        getFunction = defaultGetFunction,
+    }) {
+        super(id);
+        this.premium = premium;
+        this.saveFunction = saveFunction;
+        this.getFunction = getFunction;
+        this.options = [];
+        this.frontContainer = {
+            styling: 'style="display: none;"',
+            id: '',
+            setId(idToSet) {
+                this.id = idToSet;
+            },
+            setStyle(style) {
+                this.styling = `style="${style}"`;
+            },
+            toString() {
+                return `<tr id="${this.id}" ${this.styling}><td><table><tbody>`;
+            },
+        };
+        this.frontContainer.setId(id);
+        this.backContainer = '</tbody></table></td></tr>';
+        this.saveButtonFrontContainer = {
+            styling: 'style="display: none;"',
+            id: '',
+            setId(idToSet) {
+                this.id = idToSet;
+            },
+            setStyle(style) {
+                this.styling = `style="${style}"`;
+            },
+            toString() {
+                return `<tr id="${this.id}" ${this.styling}>`;
+            },
+        };
+        this.saveButtonFrontContainer.setId(`${id}-save-button-row`);
+        if (premium) {
+            this.saveButton = `<td align="right"><input value="Save" id="${this.id}-save-button" type="button" style="color:#FFCC11"></td>`;
+        } else {
+            this.saveButton = `<td align="right"><input value="Save" id="${this.id}-save-button" type="button"></td>`;
+        }
+        this.saveButtonBackContainer = '</tr>';
+    }
+
+    addBooleanOption({
+        variable,
+        description,
+        defaultValue = false,
+        customSaveFunction = this.saveFunction,
+        customGetFunction = this.getFunction,
+    }) {
+        const options = {
+            id: `${this.id}-option-${this.options.length}`,
+            variable,
+            description,
+            defaultValue,
+            saveFunction: customSaveFunction,
+            getFunction: customGetFunction,
+        };
+
+        const newOption = new BooleanOption(options);
         this.options.push(newOption);
         return newOption;
-    };
-    this.addNumericOption = (variableToBind, textDescription, defaultValue = 0, minValue = 0, maxValue = 0, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => {
-        const newOption = new NumericOption(`${this.id}-option-${this.options.length}`, variableToBind, textDescription, defaultValue, minValue, maxValue, customSaveFunction, customGetFunction);
+    }
+
+    addNumericOption({
+        variable,
+        description,
+        defaultValue = 0,
+        min = 0,
+        max = 0,
+        step = 1,
+        customSaveFunction = this.saveFunction,
+        customGetFunction = this.getFunction,
+    }) {
+        const options = {
+            id: `${this.id}-option-${this.options.length}`,
+            variable,
+            description,
+            defaultValue,
+            min,
+            max,
+            step,
+            saveFunction: customSaveFunction,
+            getFunction: customGetFunction,
+        };
+
+        const newOption = new NumericOption(options);
         this.options.push(newOption);
         return newOption;
-    };
-    this.addSelectOption = (variableToBind, textDescription, options = [], defaultValue = null, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => {
-        const newOption = new SelectOption(`${this.id}-option-${this.options.length}`, variableToBind, textDescription, options, defaultValue, customSaveFunction, customGetFunction);
+    }
+
+    addSelectOption({
+        variable,
+        description,
+        defaultValue = 0,
+        options = [],
+        customSaveFunction = this.saveFunction,
+        customGetFunction = this.getFunction,
+    }) {
+        const selectOptions = {
+            id: `${this.id}-option-${this.options.length}`,
+            variable,
+            description,
+            defaultValue,
+            options,
+            saveFunction: customSaveFunction,
+            getFunction: customGetFunction,
+        };
+
+        const newOption = new SelectOption(selectOptions);
         this.options.push(newOption);
         return newOption;
-    };
-    this.setFunctions = () => {
+    }
+
+    addGroupedOption({
+        description,
+        customSaveFunction = this.saveFunction,
+        customGetFunction = this.getFunction,
+    }) {
+        const groupedOptions = {
+            id: `${this.id}-option-${this.options.length}`,
+            description,
+            saveFunction: customSaveFunction,
+            getFunction: customGetFunction,
+        };
+
+        const newOption = new GroupedOptions(groupedOptions);
+        this.options.push(newOption);
+        return newOption;
+    }
+
+    setFunctions() {
         const self = this;
 
         function displaySaved(saveButtonId) {
@@ -300,8 +555,9 @@ function OptionsGroup(id, premium = false, saveFunction = defaultSaveFunction, g
                 this.options[i].setFunctions();
             }
         }
-    };
-    this.toString = () => {
+    }
+
+    toString() {
         // If no options have been defined, then don't add any elements
         if (this.options.length === 0) {
             this.frontContainer.setStyle('display: none;');
@@ -312,90 +568,251 @@ function OptionsGroup(id, premium = false, saveFunction = defaultSaveFunction, g
         }
 
         return this.frontContainer + this.options.join('') + this.backContainer + this.saveButtonFrontContainer + this.saveButton + this.saveButtonBackContainer;
-    };
-}
-
-function OptionsBox(id, number, heading, premium = false, saveFunction = defaultSaveFunction, getFunction = defaultGetFunction) {
-    let headerHtml = '<th>';
-    if (premium === true) {
-        headerHtml = '<th class="premium">';
     }
-    this.id = `options-content-${id.toString()}-box-${number.toString()}`;
-    this.saveFunction = saveFunction;
-    this.getFunction = getFunction;
-    this.frontContainer = `<form id="${this.id}" action="none"><table style="background:url(//static.pardus.at/img/std/bgd.gif)" width="100%" cellpadding="3" align="center"><tbody><tr>${headerHtml}${heading}</th></tr>`;
-    this.backContainer = '</tbody></table></form>';
-    this.innerHtml = '';
-    this.description = new DescriptionElement(`${this.id}-description`);
-    this.optionsGroup = new OptionsGroup(`${this.id}-options-group`, premium, saveFunction, getFunction);
-    this.element = htmlToElement(this.frontContainer + this.description + this.innerHtml + this.optionsGroup + this.backContainer);
-    this.refreshElement = () => {
-        this.element = htmlToElement(this.frontContainer + this.description + this.innerHtml + this.optionsGroup + this.backContainer);
-        document.getElementById(this.id).replaceWith(this.element);
-        this.optionsGroup.setFunctions();
-    };
-    this.setInnerHTML = (innerHtmlToSet) => {
-        this.innerHtml = innerHtmlToSet;
-        this.refreshElement();
-    };
-    this.initialise = () => {
-        this.optionsGroup.setFunctions();
-    };
-    this.addBooleanOption = (variableToBind, textDescription, defaultValue = false, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => {
-        const newOption = this.optionsGroup.addBooleanOption(variableToBind, textDescription, defaultValue, customSaveFunction, customGetFunction);
-        this.refreshElement();
-        return newOption;
-    };
-    this.addNumericOption = (variableToBind, textDescription, defaultValue = 0, minValue = 0, maxValue = 0, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => {
-        const newOption = this.optionsGroup.addNumericOption(variableToBind, textDescription, defaultValue, minValue, maxValue, customSaveFunction, customGetFunction);
-        this.refreshElement();
-        return newOption;
-    };
-    this.addSelectOption = (variableToBind, textDescription, options = [], defaultValue = null, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => {
-        const newOption = this.optionsGroup.addSelectOption(variableToBind, textDescription, options, defaultValue, customSaveFunction, customGetFunction);
-        this.refreshElement();
-        return newOption;
-    };
 }
 
-function OptionsContent(id, saveFunction = defaultSaveFunction, getFunction = defaultGetFunction) {
-    this.id = id;
-    this.saveFunction = saveFunction;
-    this.getFunction = getFunction;
-    this.leftBoxes = [];
-    this.rightBoxes = [];
-    this.leftElement = document.getElementById(`options-content-${id.toString()}-left`);
-    this.rightElement = document.getElementById(`options-content-${id.toString()}-right`);
-    this.addBox = (heading, premium = false, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => {
+class OptionsBox extends HtmlElement {
+    constructor({
+        id,
+        heading,
+        premium = false,
+        saveFunction = defaultSaveFunction,
+        getFunction = defaultGetFunction,
+    }) {
+        super(id);
+        this.heading = heading;
+        this.premium = premium;
+        this.saveFunction = saveFunction;
+        this.getFunction = getFunction;
+
+        const headerHtml = (premium) ? '<th class="premium">' : '<th>';
+        this.frontContainer = `<form id="${this.id}" action="none"><table style="background:url(//static.pardus.at/img/std/bgd.gif)" width="100%" cellpadding="3" align="center"><tbody><tr>${headerHtml}${heading}</th></tr>`;
+        this.backContainer = '</tbody></table></form>';
+        this.innerHtml = '';
+        this.description = new DescriptionElement(`${this.id}-description`);
+        this.optionsGroup = new OptionsGroup({
+            id: `${this.id}-options-group`,
+            premium,
+            saveFunction,
+            getFunction,
+        });
+    }
+
+    toString() {
+        return this.frontContainer + this.description + this.innerHtml + this.optionsGroup + this.backContainer;
+    }
+
+    refreshElement() {
+        this.getElement().replaceWith(this.toElement());
+        this.initialise();
+    }
+
+    initialise() {
+        this.optionsGroup.setFunctions();
+    }
+
+    addBooleanOption({
+        variable,
+        description,
+        defaultValue = false,
+        customSaveFunction = this.saveFunction,
+        customGetFunction = this.getFunction,
+    }) {
+        const booleanOptions = {
+            variable,
+            description,
+            defaultValue,
+            customSaveFunction,
+            customGetFunction,
+        };
+        const newOption = this.optionsGroup.addBooleanOption(booleanOptions);
+        this.refreshElement();
+        return newOption;
+    }
+
+    addNumericOption({
+        variable,
+        description,
+        defaultValue = false,
+        min = 0,
+        max = 0,
+        step = 1,
+        customSaveFunction = this.saveFunction,
+        customGetFunction = this.getFunction,
+    }) {
+        const numericOptions = {
+            variable,
+            description,
+            defaultValue,
+            min,
+            max,
+            step,
+            customSaveFunction,
+            customGetFunction,
+        };
+        const newOption = this.optionsGroup.addNumericOption(numericOptions);
+        this.refreshElement();
+        return newOption;
+    }
+
+    addSelectOption({
+        variable,
+        description,
+        defaultValue = false,
+        options = [],
+        customSaveFunction = this.saveFunction,
+        customGetFunction = this.getFunction,
+    }) {
+        const selectOptions = {
+            variable,
+            description,
+            defaultValue,
+            options,
+            customSaveFunction,
+            customGetFunction,
+        };
+        const newOption = this.optionsGroup.addSelectOption(selectOptions);
+        this.refreshElement();
+        return newOption;
+    }
+
+    addGroupedOption({
+        description,
+        saveFunction = this.saveFunction,
+        getFunction = this.getFunction,
+    }) {
+        const groupedOptions = {
+            description,
+            saveFunction,
+            getFunction,
+        };
+
+        const newOption = this.optionsGroup.addGroupedOption(groupedOptions);
+        this.refreshElement();
+        return newOption;
+    }
+}
+
+class OptionsContent extends HtmlElement {
+    constructor({
+        id,
+        saveFunction = defaultSaveFunction,
+        getFunction = defaultGetFunction,
+    }) {
+        super(id);
+        this.saveFunction = saveFunction;
+        this.getFunction = getFunction;
+        this.leftBoxes = [];
+        this.rightBoxes = [];
+        this.leftElement = document.getElementById(`options-content-${id.toString()}-left`);
+        this.rightElement = document.getElementById(`options-content-${id.toString()}-right`);
+    }
+
+    addBox({
+        heading,
+        premium = false,
+        customSaveFunction = this.saveFunction,
+        customGetFunction = this.getFunction,
+    }) {
         let newBox = null;
         if (this.leftBoxes.length <= this.rightBoxes.length) {
-            newBox = this.addBoxLeft(heading, premium, customSaveFunction, customGetFunction);
+            newBox = this.addBoxLeft({
+                heading,
+                premium,
+                customSaveFunction,
+                customGetFunction,
+            });
         } else {
-            newBox = this.addBoxRight(heading, premium, customSaveFunction, customGetFunction);
+            newBox = this.addBoxRight({
+                heading,
+                premium,
+                customSaveFunction,
+                customGetFunction,
+            });
         }
         return newBox;
-    };
-    this.addBoxLeft = (heading, premium = false, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => {
-        const newBox = new OptionsBox(`${id}-left`, this.leftBoxes.length, heading, premium, customSaveFunction, customGetFunction);
-        this.leftElement.appendChild(newBox.element);
+    }
+
+    addBoxLeft({
+        heading,
+        premium = false,
+        customSaveFunction = this.saveFunction,
+        customGetFunction = this.getFunction,
+    }) {
+        const newBox = new OptionsBox({
+            id: `options-content-${this.id}-left-box-${this.leftBoxes.length}`,
+            heading,
+            premium,
+            saveFunction: customSaveFunction,
+            getFunction: customGetFunction,
+        });
+        this.leftElement.appendChild(newBox.toElement());
         this.leftElement.appendChild(document.createElement('br'));
         this.leftElement.appendChild(document.createElement('br'));
         this.leftBoxes.push(newBox);
         newBox.initialise();
         return newBox;
-    };
-    this.addBoxRight = (heading, premium = false, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => {
-        const newBox = new OptionsBox(`${id}-right`, this.rightBoxes.length, heading, premium, customSaveFunction, customGetFunction);
-        this.rightElement.appendChild(newBox.element);
+    }
+
+    addBoxRight({
+        heading,
+        premium = false,
+        customSaveFunction = this.saveFunction,
+        customGetFunction = this.getFunction,
+    }) {
+        const newBox = new OptionsBox({
+            id: `options-content-${this.id}-right-box-${this.rightBoxes.length}`,
+            heading,
+            premium,
+            saveFunction: customSaveFunction,
+            getFunction: customGetFunction,
+        });
+        this.rightElement.appendChild(newBox.toElement());
         this.rightElement.appendChild(document.createElement('br'));
         this.rightElement.appendChild(document.createElement('br'));
         this.rightBoxes.push(newBox);
         newBox.initialise();
         return newBox;
-    };
-    this.addPremiumBox = (heading, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => this.addBox(heading, true, customSaveFunction, customGetFunction);
-    this.addPremiumBoxLeft = (heading, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => this.addBoxLeft(heading, true, customSaveFunction, customGetFunction);
-    this.addPremiumBoxRight = (heading, customSaveFunction = this.saveFunction, customGetFunction = this.getFunction) => this.addBoxRight(heading, true, customSaveFunction, customGetFunction);
+    }
+
+    addPremiumBox({
+        heading,
+        customSaveFunction = this.saveFunction,
+        customGetFunction = this.getFunction,
+    }) {
+        return this.addBox({
+            heading,
+            premium: true,
+            customSaveFunction,
+            customGetFunction,
+        });
+    }
+
+    addPremiumBoxLeft({
+        heading,
+        customSaveFunction = this.saveFunction,
+        customGetFunction = this.getFunction,
+    }) {
+        return this.addBoxLeft({
+            heading,
+            premium: true,
+            customSaveFunction,
+            customGetFunction,
+        });
+    }
+
+    addPremiumBoxRight({
+        heading,
+        customSaveFunction = this.saveFunction,
+        customGetFunction = this.getFunction,
+    }) {
+        return this.addBoxRight({
+            heading,
+            premium: true,
+            customSaveFunction,
+            customGetFunction,
+        });
+    }
 }
 
 const Options = (function initOptions() {
@@ -459,7 +876,11 @@ const Options = (function initOptions() {
         contentElement.childNodes[0].appendChild(newTab.contentElement);
         tabs.push(newTab);
 
-        return new OptionsContent(newTab.id, saveFunction, getFunction);
+        return new OptionsContent({
+            id: newTab.id,
+            saveFunction,
+            getFunction,
+        });
     }
 
     function initialise() {
