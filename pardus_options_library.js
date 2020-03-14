@@ -1,40 +1,29 @@
 /* global unsafeWindow */
 
-/**
- *  Helper functions
- */
-
-function defaultSaveFunction(key, value) {
-    console.warn(`Default save function not overridden, script cannot save key '${key}' with value '${value}'`);
-}
-
-function defaultGetFunction(key, defaultValue = null) {
-    console.warn(`Default get function not overridden, script cannot get key '${key}' with default value ${defaultValue}'.`);
-}
-
-/**
- *  Returns the active universe
- */
-function getUniverse() {
-    switch (document.location.hostname) {
-        case 'orion.pardus.at':
-            return 'orion';
-        case 'artemis.pardus.at':
-            return 'artemis';
-        case 'pegasus.pardus.at':
-            return 'pegasus';
-        default:
-            throw new Error('Unable to determine universe');
+class PardusOptionsUtility {
+    static defaultSaveFunction(key, value) {
+        console.warn(`Default save function not overridden, script cannot save key '${key}' with value '${value}'`);
     }
-}
 
-/**
- *  Turns an HTML string into an embeddable DOM element
- */
-function htmlToElement(html) {
-    const template = document.createElement('template');
-    template.innerHTML = html;
-    return template.content.firstChild;
+    static defaultGetFunction(key, defaultValue = null) {
+        console.warn(`Default get function not overridden, script cannot get key '${key}' with default value ${defaultValue}'.`);
+    }
+
+    /**
+     *  Returns the active universe
+     */
+    static getUniverse() {
+        switch (document.location.hostname) {
+            case 'orion.pardus.at':
+                return 'orion';
+            case 'artemis.pardus.at':
+                return 'artemis';
+            case 'pegasus.pardus.at':
+                return 'pegasus';
+            default:
+                throw new Error('Unable to determine universe');
+        }
+    }
 }
 
 class HtmlElement {
@@ -46,8 +35,16 @@ class HtmlElement {
         return `<div id='${this.id}'></div>`;
     }
 
+    beforeRefreshElement() {
+    }
+
+    afterRefreshElement() {
+    }
+
     refreshElement() {
+        this.beforeRefreshElement();
         this.getElement().replaceWith(this.toElement());
+        this.afterRefreshElement();
     }
 
     getElement() {
@@ -86,7 +83,6 @@ class DescriptionElement extends HtmlElement {
             },
         };
         this.frontContainer.setId(id);
-        this.element = htmlToElement(this.toString());
     }
 
     addImageLeft(imageSrc) {
@@ -127,8 +123,8 @@ class AbstractOption extends HtmlElement {
         variable,
         description,
         defaultValue = false,
-        saveFunction = defaultSaveFunction,
-        getFunction = defaultGetFunction,
+        saveFunction = PardusOptionsUtility.defaultSaveFunction,
+        getFunction = PardusOptionsUtility.defaultGetFunction,
         shallow = false,
     }) {
         super(id);
@@ -153,7 +149,7 @@ class AbstractOption extends HtmlElement {
     }
 
     getValue() {
-        return this.getFunction(`${getUniverse()}_${this.variable}`, this.defaultValue);
+        return this.getFunction(`${PardusOptionsUtility.getUniverse()}_${this.variable}`, this.defaultValue);
     }
 
     getCurrentValue() {
@@ -165,7 +161,7 @@ class AbstractOption extends HtmlElement {
     }
 
     saveValue() {
-        this.saveFunction(`${getUniverse()}_${this.variable}`, this.getCurrentValue());
+        this.saveFunction(`${PardusOptionsUtility.getUniverse()}_${this.variable}`, this.getCurrentValue());
     }
 }
 
@@ -189,8 +185,8 @@ class NumericOption extends AbstractOption {
         variable,
         description,
         defaultValue = 0,
-        saveFunction = defaultSaveFunction,
-        getFunction = defaultGetFunction,
+        saveFunction = PardusOptionsUtility.defaultSaveFunction,
+        getFunction = PardusOptionsUtility.defaultGetFunction,
         min = 0,
         max = 0,
         step = 1,
@@ -223,8 +219,8 @@ class SelectOption extends AbstractOption {
         variable,
         description,
         defaultValue = null,
-        saveFunction = defaultSaveFunction,
-        getFunction = defaultGetFunction,
+        saveFunction = PardusOptionsUtility.defaultSaveFunction,
+        getFunction = PardusOptionsUtility.defaultGetFunction,
         options = [],
     }) {
         super({
@@ -310,8 +306,8 @@ class GroupedOptions extends HtmlElement {
     constructor({
         id,
         description,
-        saveFunction = defaultSaveFunction,
-        getFunction = defaultGetFunction,
+        saveFunction = PardusOptionsUtility.defaultSaveFunction,
+        getFunction = PardusOptionsUtility.defaultGetFunction,
     }) {
         super(id);
         this.description = description;
@@ -364,12 +360,91 @@ class GroupedOptions extends HtmlElement {
     }
 }
 
+class SaveButton extends HtmlElement {
+    constructor({
+        id,
+        premium = false,
+    }) {
+        super(id);
+        this.premium = premium;
+
+        if (this.premium) {
+            this.colour = '#FFCC11';
+        } else {
+            this.colour = '#D0D1D9';
+        }
+    }
+
+    toString() {
+        return `<input value="Save" id="${this.id}" type="button" style="color:${this.colour}">`;
+    }
+
+    displaySaved() {
+        this.getElement().setAttribute('disabled', 'true');
+        this.getElement().value = 'Saved';
+        this.getElement().setAttribute('style', 'color:green;background-color:silver');
+        setTimeout(() => {
+            this.getElement().removeAttribute('disabled');
+            this.getElement().value = 'Save';
+            if (this.premium) {
+                this.getElement().setAttribute('style', 'color:#FFCC11');
+            } else {
+                this.getElement().removeAttribute('style');
+            }
+        }, 2000);
+    }
+
+    addClickEventListener({
+        func,
+    }) {
+        if (this.getElement()) {
+            if (this.getElement().addEventListener) {
+                this.getElement().addEventListener('click', func, false);
+            } else if (this.getElement().attachEvent) {
+                this.getElement().attachEvent('onclick', func);
+            }
+        } else {
+            console.log(`No element '${this.id}'.`);
+        }
+    }
+}
+
+class SaveButtonRow extends HtmlElement {
+    constructor({
+        id,
+        premium = false,
+    }) {
+        super(id);
+        this.premium = premium;
+        this.saveButton = new SaveButton({
+            id: `${this.id}-button`,
+            premium,
+        });
+    }
+
+    toString() {
+        return `<tr id="${this.id}"><td align="right">${this.saveButton}</td></tr>`;
+    }
+
+    displaySaved() {
+        this.saveButton.displaySaved();
+    }
+
+    addClickEventListener({
+        func,
+    }) {
+        this.saveButton.addClickEventListener({
+            func,
+        });
+    }
+}
+
 class OptionsGroup extends HtmlElement {
     constructor({
         id,
         premium = false,
-        saveFunction = defaultSaveFunction,
-        getFunction = defaultGetFunction,
+        saveFunction = PardusOptionsUtility.defaultSaveFunction,
+        getFunction = PardusOptionsUtility.defaultGetFunction,
     }) {
         super(id);
         this.premium = premium;
@@ -391,26 +466,6 @@ class OptionsGroup extends HtmlElement {
         };
         this.frontContainer.setId(id);
         this.backContainer = '</tbody></table></td></tr>';
-        this.saveButtonFrontContainer = {
-            styling: 'style="display: none;"',
-            id: '',
-            setId(idToSet) {
-                this.id = idToSet;
-            },
-            setStyle(style) {
-                this.styling = `style="${style}"`;
-            },
-            toString() {
-                return `<tr id="${this.id}" ${this.styling}>`;
-            },
-        };
-        this.saveButtonFrontContainer.setId(`${id}-save-button-row`);
-        if (premium) {
-            this.saveButton = `<td align="right"><input value="Save" id="${this.id}-save-button" type="button" style="color:#FFCC11"></td>`;
-        } else {
-            this.saveButton = `<td align="right"><input value="Save" id="${this.id}-save-button" type="button"></td>`;
-        }
-        this.saveButtonBackContainer = '</tr>';
     }
 
     addBooleanOption({
@@ -420,16 +475,14 @@ class OptionsGroup extends HtmlElement {
         customSaveFunction = this.saveFunction,
         customGetFunction = this.getFunction,
     }) {
-        const options = {
+        const newOption = new BooleanOption({
             id: `${this.id}-option-${this.options.length}`,
             variable,
             description,
             defaultValue,
             saveFunction: customSaveFunction,
             getFunction: customGetFunction,
-        };
-
-        const newOption = new BooleanOption(options);
+        });
         this.options.push(newOption);
         return newOption;
     }
@@ -444,7 +497,7 @@ class OptionsGroup extends HtmlElement {
         customSaveFunction = this.saveFunction,
         customGetFunction = this.getFunction,
     }) {
-        const options = {
+        const newOption = new NumericOption({
             id: `${this.id}-option-${this.options.length}`,
             variable,
             description,
@@ -454,9 +507,7 @@ class OptionsGroup extends HtmlElement {
             step,
             saveFunction: customSaveFunction,
             getFunction: customGetFunction,
-        };
-
-        const newOption = new NumericOption(options);
+        });
         this.options.push(newOption);
         return newOption;
     }
@@ -469,7 +520,7 @@ class OptionsGroup extends HtmlElement {
         customSaveFunction = this.saveFunction,
         customGetFunction = this.getFunction,
     }) {
-        const selectOptions = {
+        const newOption = new SelectOption({
             id: `${this.id}-option-${this.options.length}`,
             variable,
             description,
@@ -477,9 +528,7 @@ class OptionsGroup extends HtmlElement {
             options,
             saveFunction: customSaveFunction,
             getFunction: customGetFunction,
-        };
-
-        const newOption = new SelectOption(selectOptions);
+        });
         this.options.push(newOption);
         return newOption;
     }
@@ -489,85 +538,29 @@ class OptionsGroup extends HtmlElement {
         customSaveFunction = this.saveFunction,
         customGetFunction = this.getFunction,
     }) {
-        const groupedOptions = {
+        const newOption = new GroupedOptions({
             id: `${this.id}-option-${this.options.length}`,
             description,
             saveFunction: customSaveFunction,
             getFunction: customGetFunction,
-        };
-
-        const newOption = new GroupedOptions(groupedOptions);
+        });
         this.options.push(newOption);
         return newOption;
-    }
-
-    setFunctions() {
-        const self = this;
-
-        function displaySaved(saveButtonId) {
-            const saveButton = document.getElementById(saveButtonId);
-            saveButton.setAttribute('disabled', 'true');
-            saveButton.value = 'Saved';
-            saveButton.setAttribute('style', 'color:green;background-color:silver');
-            setTimeout(() => {
-                saveButton.removeAttribute('disabled');
-                saveButton.value = 'Save';
-                saveButton.removeAttribute('style');
-            }, 2000);
-        }
-
-        function displayPremiumSaved(saveButtonId) {
-            const saveButton = document.getElementById(saveButtonId);
-            saveButton.setAttribute('disabled', 'true');
-            saveButton.value = 'Saved';
-            saveButton.setAttribute('style', 'color:green;background-color:silver');
-            setTimeout(() => {
-                saveButton.removeAttribute('disabled');
-                saveButton.value = 'Save';
-                saveButton.setAttribute('style', 'color:#FFCC11');
-            }, 2000);
-        }
-
-        function saveButtonFunction() {
-            let i = 0;
-            for (i = 0; i < self.options.length; i += 1) {
-                self.options[i].saveValue();
-            }
-            if (self.premium) {
-                displayPremiumSaved(`${self.id}-save-button`);
-            } else {
-                displaySaved(`${self.id}-save-button`);
-            }
-        }
-
-        if (document.getElementById(`${this.id}-save-button`)) {
-            if (document.getElementById(`${this.id}-save-button`).addEventListener) {
-                document.getElementById(`${this.id}-save-button`).addEventListener('click', saveButtonFunction, false);
-            } else if (document.getElementById(`${this.id}-save-button`).attachEvent) {
-                document.getElementById(`${this.id}-save-button`).attachEvent('onclick', saveButtonFunction);
-            }
-        } else {
-            console.log(`No element '${this.id}-save-button'.`);
-        }
-
-        for (let i = 0; i < this.options.length; i += 1) {
-            if (typeof this.options[i].setFunctions === 'function') {
-                this.options[i].setFunctions();
-            }
-        }
     }
 
     toString() {
         // If no options have been defined, then don't add any elements
         if (this.options.length === 0) {
             this.frontContainer.setStyle('display: none;');
-            this.saveButtonFrontContainer.setStyle('display: none;');
-        } else {
-            this.frontContainer.setStyle('');
-            this.saveButtonFrontContainer.setStyle('');
+            return this.frontContainer + this.backContainer;
         }
+        this.frontContainer.setStyle('');
 
-        return this.frontContainer + this.options.join('') + this.backContainer + this.saveButtonFrontContainer + this.saveButton + this.saveButtonBackContainer;
+        return this.frontContainer + this.options.join('') + this.backContainer;
+    }
+
+    afterRefreshElement() {
+        this.setFunctions();
     }
 }
 
@@ -576,8 +569,8 @@ class OptionsBox extends HtmlElement {
         id,
         heading,
         premium = false,
-        saveFunction = defaultSaveFunction,
-        getFunction = defaultGetFunction,
+        saveFunction = PardusOptionsUtility.defaultSaveFunction,
+        getFunction = PardusOptionsUtility.defaultGetFunction,
     }) {
         super(id);
         this.heading = heading;
@@ -596,19 +589,34 @@ class OptionsBox extends HtmlElement {
             saveFunction,
             getFunction,
         });
+        this.saveButtonRow = new SaveButtonRow({
+            id: `${this.id}-save`,
+            premium,
+        });
     }
 
     toString() {
-        return this.frontContainer + this.description + this.innerHtml + this.optionsGroup + this.backContainer;
+        if (this.optionsGroup.options.length === 0) {
+            return this.frontContainer + this.description + this.innerHtml + this.optionsGroup + this.backContainer;
+        }
+        return this.frontContainer + this.description + this.innerHtml + this.optionsGroup + this.saveButtonRow + this.backContainer;
     }
 
-    refreshElement() {
-        this.getElement().replaceWith(this.toElement());
-        this.initialise();
+    setFunctions() {
+        if (this.optionsGroup.options.length !== 0) {
+            this.saveButtonRow.addClickEventListener({
+                func: () => {
+                    for (const option of this.optionsGroup.options) {
+                        option.saveValue();
+                    }
+                    this.saveButtonRow.displaySaved();
+                },
+            });
+        }
     }
 
-    initialise() {
-        this.optionsGroup.setFunctions();
+    afterRefreshElement() {
+        this.setFunctions();
     }
 
     addBooleanOption({
@@ -696,16 +704,18 @@ class OptionsBox extends HtmlElement {
 class OptionsContent extends HtmlElement {
     constructor({
         id,
-        saveFunction = defaultSaveFunction,
-        getFunction = defaultGetFunction,
+        heading,
+        content = null,
+        saveFunction = PardusOptionsUtility.defaultSaveFunction,
+        getFunction = PardusOptionsUtility.defaultGetFunction,
     }) {
         super(id);
+        this.heading = heading;
+        this.content = content;
         this.saveFunction = saveFunction;
         this.getFunction = getFunction;
         this.leftBoxes = [];
         this.rightBoxes = [];
-        this.leftElement = document.getElementById(`options-content-${id.toString()}-left`);
-        this.rightElement = document.getElementById(`options-content-${id.toString()}-right`);
     }
 
     addBox({
@@ -740,17 +750,14 @@ class OptionsContent extends HtmlElement {
         customGetFunction = this.getFunction,
     }) {
         const newBox = new OptionsBox({
-            id: `options-content-${this.id}-left-box-${this.leftBoxes.length}`,
+            id: `${this.id}-left-box-${this.leftBoxes.length}`,
             heading,
             premium,
             saveFunction: customSaveFunction,
             getFunction: customGetFunction,
         });
-        this.leftElement.appendChild(newBox.toElement());
-        this.leftElement.appendChild(document.createElement('br'));
-        this.leftElement.appendChild(document.createElement('br'));
         this.leftBoxes.push(newBox);
-        newBox.initialise();
+        this.refreshElement();
         return newBox;
     }
 
@@ -761,17 +768,14 @@ class OptionsContent extends HtmlElement {
         customGetFunction = this.getFunction,
     }) {
         const newBox = new OptionsBox({
-            id: `options-content-${this.id}-right-box-${this.rightBoxes.length}`,
+            id: `${this.id}-right-box-${this.rightBoxes.length}`,
             heading,
             premium,
             saveFunction: customSaveFunction,
             getFunction: customGetFunction,
         });
-        this.rightElement.appendChild(newBox.toElement());
-        this.rightElement.appendChild(document.createElement('br'));
-        this.rightElement.appendChild(document.createElement('br'));
         this.rightBoxes.push(newBox);
-        newBox.initialise();
+        this.refreshElement();
         return newBox;
     }
 
@@ -813,161 +817,263 @@ class OptionsContent extends HtmlElement {
             customGetFunction,
         });
     }
+
+    toString() {
+        if (this.content !== null) {
+            return this.content;
+        }
+        return `<table hidden class="messagestyle" id="${this.id}" style="background:url(//static.pardus.at/img/std/bgdark.gif)"><tbody><tr><td><div align="center"><h1>${this.heading}</h1></div><table width="100%" align="center"><tbody><tr><td id="${this.id}-left" width="350" valign="top">${this.leftBoxes.join('<br><br>')}</td><td width="40"></td><td id="${this.id}-right" width="350" valign="top">${this.rightBoxes.join('<br><br>')}</td></tr></tbody></table></td></tr></tbody></table>`;
+    }
+
+    afterRefreshElement() {
+        for (const box of this.leftBoxes) {
+            box.afterRefreshElement();
+        }
+        for (const box of this.rightBoxes) {
+            box.afterRefreshElement();
+        }
+    }
+
+    setActive() {
+        this.getElement().removeAttribute('hidden');
+    }
+
+    setInactive() {
+        this.getElement().setAttribute('hidden', '');
+    }
 }
 
-const Options = (function initOptions() {
-    // Required for compatibility
-    const version = 1.2;
-
-    let tabs = [];
-    let tabsElement = null;
-    let contentElement = null;
-
-    function getVersion() {
-        return version;
+class TabLabel extends HtmlElement {
+    constructor({
+        id,
+        heading,
+    }) {
+        super(id);
+        this.heading = heading;
     }
 
-    function createTabElement(label, id) {
-        return htmlToElement(`<td id="${id.toString()}" style="background: transparent url(&quot;//static.pardus.at/img/std/tab.png&quot;) repeat scroll 0% 0%; cursor: default;" onmouseover="this.style.background='url(//static.pardus.at/img/std/tabactive.png)';this.style.cursor='default'" onmouseout="this.style.background='url(//static.pardus.at/img/std/tab.png)'" class="tabcontent">${label}</td>`);
+    toString() {
+        return `<td id="${this.id}" style="background: transparent url(&quot;//static.pardus.at/img/std/tab.png&quot;) repeat scroll 0% 0%; cursor: default;" onmouseover="this.style.background='url(//static.pardus.at/img/std/tabactive.png)';this.style.cursor='default'" onmouseout="this.style.background='url(//static.pardus.at/img/std/tab.png)'" class="tabcontent">${this.heading}</td>`;
     }
 
-    function createTabContentElement(label, id) {
-        return htmlToElement(`<table hidden class="messagestyle" id="options-content-${id.toString()}" style="background:url(//static.pardus.at/img/std/bgdark.gif)"><tbody><tr><td><div align="center"><h1>${label}</h1></div><div id="saved-message" align="center" hidden=""><h2><font style="border:2px; border-style:solid; border-radius:10px; border-color:#00AA00; padding: 5px;" color="green">Settings saved</font></h2></div><table width="100%" align="center"><tbody><tr><td id="options-content-${id.toString()}-left" width="350" valign="top"></td><td width="40"></td><td id="options-content-${id.toString()}-right" width="350" valign="top"></td></tr></tbody></table></td></tr></tbody></table>`);
+    setActive() {
+        this.getElement().setAttribute('style', "background: transparent url('//static.pardus.at/img/std/tabactive.png') repeat scroll 0% 0%; cursor: default;");
+        this.getElement().setAttribute('onmouseover', "this.style.cursor='default'");
+        this.getElement().removeAttribute('onmouseout');
     }
 
-    function setAsActive(id) {
-        for (let i = 0; i < tabs.length; i += 1) {
-            if (tabs[i].id !== id) {
-                tabs[i].tabElement.setAttribute('style', "background: transparent url('//static.pardus.at/img/std/tab.png') repeat scroll 0% 0%; cursor: default;");
-                tabs[i].tabElement.setAttribute('onmouseover', "this.style.background='url(//static.pardus.at/img/std/tabactive.png)';this.style.cursor='default'");
-                tabs[i].tabElement.setAttribute('onmouseout', "this.style.background='url(//static.pardus.at/img/std/tab.png)'");
-                tabs[i].contentElement.setAttribute('hidden', '');
-                tabs[i].active = false;
-            } else {
-                tabs[i].tabElement.setAttribute('style', "background: transparent url('//static.pardus.at/img/std/tabactive.png') repeat scroll 0% 0%; cursor: default;");
-                tabs[i].tabElement.setAttribute('onmouseover', "this.style.cursor='default'");
-                tabs[i].tabElement.removeAttribute('onmouseout');
-                tabs[i].contentElement.removeAttribute('hidden');
-                tabs[i].active = true;
-            }
-        }
+    setInactive() {
+        this.getElement().setAttribute('style', "background: transparent url('//static.pardus.at/img/std/tab.png') repeat scroll 0% 0%; cursor: default;");
+        this.getElement().setAttribute('onmouseover', "this.style.background='url(//static.pardus.at/img/std/tabactive.png)';this.style.cursor='default'");
+        this.getElement().setAttribute('onmouseout', "this.style.background='url(//static.pardus.at/img/std/tab.png)'");
     }
+}
 
-    function addTab(label, id, content, saveFunction = defaultSaveFunction, getFunction = defaultGetFunction) {
-        let tmpContentElement = null;
-
-        if (content) {
-            tmpContentElement = content;
-        } else {
-            tmpContentElement = createTabContentElement(label, id);
-        }
-
-        const newTab = {
-            active: false,
-            label,
-            id: id.toString(),
-            contentElement: tmpContentElement,
-            tabElement: createTabElement(label, id),
-        };
-
-        newTab.tabElement.addEventListener('click', () => setAsActive(newTab.id), true);
-        tabsElement.childNodes[0].childNodes[0].appendChild(newTab.tabElement);
-        tabsElement.width = (tabs.length + 1) * 96;
-        contentElement.childNodes[0].appendChild(newTab.contentElement);
-        tabs.push(newTab);
-
-        return new OptionsContent({
-            id: newTab.id,
+class Tab {
+    constructor({
+        id,
+        heading,
+        content = null,
+        saveFunction = PardusOptionsUtility.defaultSaveFunction,
+        getFunction = PardusOptionsUtility.defaultGetFunction,
+    }) {
+        this.id = id;
+        this.heading = heading;
+        this.content = new OptionsContent({
+            id: `options-content-${this.id}`,
+            heading,
+            content,
             saveFunction,
             getFunction,
         });
+        this.label = new TabLabel({
+            id: `${this.id}-label`,
+            heading,
+        });
+        this.active = false;
+        this.saveFunction = saveFunction;
+        this.getFunction = getFunction;
     }
 
-    function initialise() {
-        // HTML for both the options tabs and the content area
-        const optionsHtml = '<table id="options-area"><tbody><tr><td><table id="options-tabs" width="96" cellspacing="0" cellpadding="0" border="0" align="left"><tbody><tr></tr></tbody></table></td></tr><tr id="options-content"><td></td></tr></tbody></table>';
+    setActive() {
+        this.label.setActive();
+        this.content.setActive();
+        this.active = true;
+    }
 
-        // Element for both the options tabs and the content area
-        const optionsElement = htmlToElement(optionsHtml);
+    setInactive() {
+        this.label.setInactive();
+        this.content.setInactive();
+        this.active = false;
+    }
 
+    getContent() {
+        return this.content;
+    }
+
+    getLabel() {
+        return this.label;
+    }
+}
+
+class TabsElement extends HtmlElement {
+    constructor({
+        id,
+    }) {
+        super(id);
+        this.labels = [];
+    }
+
+    addLabel({
+        label,
+    }) {
+        this.labels.push(label);
+    }
+
+    toString() {
+        return `<table id="${this.id}" width="${this.labels.length * 96}" cellspacing="0" cellpadding="0" border="0" align="left"><tbody><tr>${this.labels.join('')}</tr></tbody></table>`;
+    }
+}
+
+class ContentsArea extends HtmlElement {
+    constructor({
+        id,
+    }) {
+        super(id);
+        this.contents = [];
+    }
+
+    addContent({
+        content,
+    }) {
+        this.contents.push(content);
+    }
+
+    toString() {
+        return `<tr id="${this.id}"><td>${this.contents.join('')}</td></tr>`;
+    }
+
+    afterRefreshElement() {
+        for (const content of this.contents) {
+            content.afterRefreshElement();
+        }
+    }
+}
+
+class PardusOptions extends HtmlElement {
+    constructor({
+        upgradeOptions = false,
+        tabs = [],
+        tabsElement = new TabsElement({
+            id: 'options-tabs',
+        }),
+        contentElement = new ContentsArea({
+            id: 'options-content',
+        }),
+    } = {}) {
+        super('options-area');
+        this.tabs = tabs;
+        this.tabsElement = tabsElement;
+        this.contentElement = contentElement;
+
+        if (upgradeOptions) {
+            return;
+        }
+
+        // Get the normal Pardus options
         const defaultPardusOptionsContent = document.getElementsByTagName('table')[2];
+
+        // Identify the containing HTML element to house all the options HTML
         const pardusMainElement = defaultPardusOptionsContent.parentNode;
 
+        // Give the Pardus options an appropriate id, and remove it from the DOM
         defaultPardusOptionsContent.setAttribute('id', 'options-content-pardus-default');
-        defaultPardusOptionsContent.setAttribute('hidden', '');
+        defaultPardusOptionsContent.remove();
 
-        optionsElement.childNodes[0].childNodes[1].childNodes[0].appendChild(defaultPardusOptionsContent);
+        // Add this object to the DOM within the main containing element
+        pardusMainElement.appendChild(this.toElement());
 
-        pardusMainElement.appendChild(optionsElement);
-        tabsElement = document.getElementById('options-tabs');
-        contentElement = document.getElementById('options-content');
+        // Add the Pardus options back in
+        this.addTab({
+            id: 'pardus-default',
+            heading: 'Pardus Options',
+            content: defaultPardusOptionsContent.outerHTML,
+        });
 
-        addTab('Pardus Options', 'pardus-default', defaultPardusOptionsContent);
+        // Set the Pardus options tab to be active by default
+        this.setActiveTab('pardus-default');
     }
 
-    /* function drawTabs() {
-        tabsElement.width = tabs.length * 96;
-        tabsElement.childNodes[0].childNodes[0].innerHTML = '';
-        for (let i = 0; i < tabs.length; i += 1) {
-            tabsElement.childNodes[0].childNodes[0].appendChild(tabs[i].tabElement);
-        }
-    } */
-
-    function exportUpgrade() {
-        return {
-            version: getVersion(),
-            tabs,
-            tabsElement,
-            contentElement,
-        };
+    static version() {
+        return 1.4;
     }
 
-    function importUpgrade(importVals = { tabs: [], tabsElement: null, contentElement: null }) {
-        tabs = importVals.tabs;
-        tabsElement = importVals.tabsElement;
-        contentElement = importVals.contentElement;
+    addTab({
+        id,
+        heading,
+        content = null,
+        saveFunction = PardusOptionsUtility.defaultSaveFunction,
+        getFunction = PardusOptionsUtility.defaultGetFunction,
+    }) {
+        const newTab = new Tab({
+            id,
+            heading,
+            content,
+            saveFunction,
+            getFunction,
+        });
+
+        this.tabs.push(newTab);
+        this.tabsElement.addLabel({
+            label: newTab.getLabel(),
+        });
+        this.contentElement.addContent({
+            content: newTab.getContent(),
+        });
+
+        this.refreshElement();
+
+        return newTab.getContent();
     }
 
-    return {
-        version() {
-            return getVersion();
-        },
-        addNewTab(label, id, saveFunction = defaultSaveFunction, getFunction = defaultGetFunction) {
-            return addTab(label, id, null, saveFunction, getFunction);
-        },
-        getTab(id) {
-            let tabToReturn = null;
-            for (let i = 0; i < tabs.length; i += 1) {
-                if (tabs[i].id === id) {
-                    tabToReturn = tabs[i];
-                }
+    setActiveTab(id) {
+        for (const tab of this.tabs) {
+            if (tab.id === id) {
+                tab.setActive();
+            } else {
+                tab.setInactive();
             }
-            return tabToReturn;
-        },
-        create() {
-            initialise();
-            setAsActive('pardus-default');
-        },
-        exportUpgrade() {
-            return exportUpgrade();
-        },
-        importUpgrade(importVals) {
-            importUpgrade(importVals);
-        },
-    };
-})();
+        }
+    }
+
+    afterRefreshElement() {
+        // Add the tab-switching logic
+        for (const tab of this.tabs) {
+            tab.getLabel().getElement().addEventListener('click', () => this.setActiveTab(tab.id), true);
+        }
+
+        this.contentElement.afterRefreshElement();
+    }
+
+    toString() {
+        return `<table id="options-area"><tbody><tr><td>${this.tabsElement}</td></tr>${this.contentElement}</tbody></table>`;
+    }
+}
 
 /**
   *  Add the Options object to the page for all scripts to use
   */
 if (document.location.pathname === '/options.php') {
-    if (typeof unsafeWindow.Options === 'undefined' || !unsafeWindow.Options) {
-        unsafeWindow.Options = Options;
-        unsafeWindow.Options.create();
-    } else if (unsafeWindow.Options && typeof unsafeWindow.Options.version === 'function' && unsafeWindow.Options.version() < Options.version()) {
+    if (typeof unsafeWindow.PardusOptions === 'undefined' || !unsafeWindow.PardusOptions) {
+        unsafeWindow.PardusOptions = new PardusOptions();
+    } else if (unsafeWindow.PardusOptions && typeof unsafeWindow.PardusOptions.constructor.version === 'function' && unsafeWindow.PardusOptions.constructor.version() < PardusOptions.version()) {
         // Upgrade the version if two scripts use different ones
-        // console.log(`Upgrading Pardus Options Library from version ${unsafeWindow.Options.version()} to ${Options.version()}.`);
-        Options.importUpgrade(unsafeWindow.Options.exportUpgrade());
-        unsafeWindow.Options = Options;
+        console.log(`Upgrading Pardus Options Library from version ${unsafeWindow.PardusOptions.constructor.version()} to ${PardusOptions.version()}.`);
+        unsafeWindow.PardusOptions = new PardusOptions({
+            upgradeOptions: true,
+            tabs: unsafeWindow.PardusOptions.tabs,
+            tabsElement: unsafeWindow.PardusOptions.tabsElement,
+            contentElement: unsafeWindow.PardusOptions.contentElement,
+        });
     }
 }
