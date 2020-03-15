@@ -850,9 +850,13 @@ class TabLabel extends HtmlElement {
     }) {
         super(id);
         this.heading = heading;
+        this.active = false;
     }
 
     toString() {
+        if (this.active) {
+            return `<td id="${this.id}" style="background: transparent url(&quot;//static.pardus.at/img/std/tabactive.png&quot;) repeat scroll 0% 0%; cursor: default;" onmouseover="this.style.cursor='default'" class="tabcontent">${this.heading}</td>`;
+        }
         return `<td id="${this.id}" style="background: transparent url(&quot;//static.pardus.at/img/std/tab.png&quot;) repeat scroll 0% 0%; cursor: default;" onmouseover="this.style.background='url(//static.pardus.at/img/std/tabactive.png)';this.style.cursor='default'" onmouseout="this.style.background='url(//static.pardus.at/img/std/tab.png)'" class="tabcontent">${this.heading}</td>`;
     }
 
@@ -860,12 +864,14 @@ class TabLabel extends HtmlElement {
         this.getElement().setAttribute('style', "background: transparent url('//static.pardus.at/img/std/tabactive.png') repeat scroll 0% 0%; cursor: default;");
         this.getElement().setAttribute('onmouseover', "this.style.cursor='default'");
         this.getElement().removeAttribute('onmouseout');
+        this.active = true;
     }
 
     setInactive() {
         this.getElement().setAttribute('style', "background: transparent url('//static.pardus.at/img/std/tab.png') repeat scroll 0% 0%; cursor: default;");
         this.getElement().setAttribute('onmouseover', "this.style.background='url(//static.pardus.at/img/std/tabactive.png)';this.style.cursor='default'");
         this.getElement().setAttribute('onmouseout', "this.style.background='url(//static.pardus.at/img/std/tab.png)'");
+        this.active = false;
     }
 }
 
