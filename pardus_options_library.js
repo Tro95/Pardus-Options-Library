@@ -6,7 +6,7 @@ class PardusOptionsUtility {
     }
 
     static defaultGetFunction(key, defaultValue = null) {
-        console.warn(`Default get function not overridden, script cannot get key '${key}' with default value ${defaultValue}'.`);
+        console.warn(`Default get function not overridden, script cannot get key '${key}' with default value ${defaultValue}'`);
     }
 
     /**
@@ -62,10 +62,13 @@ class HtmlElement {
  *  Controls the description for a specific OptionsBox, only one description per OptionsBox permitted
  */
 class DescriptionElement extends HtmlElement {
-    constructor(id) {
+    constructor({
+        id,
+        description = '',
+    }) {
         super(id);
         this.backContainer = '</tr></tbody></table></td></tr>';
-        this.description = '';
+        this.description = description;
         this.imageLeft = '';
         this.imageRight = '';
         this.alignment = 'center';
@@ -131,7 +134,7 @@ class AbstractOption extends HtmlElement {
         this.variable = variable;
         this.saveFunction = saveFunction;
         this.getFunction = getFunction;
-        this.textDescription = description;
+        this.description = description;
         this.defaultValue = defaultValue;
         this.inputId = `${this.id}-input`;
         this.shallow = shallow;
@@ -139,9 +142,9 @@ class AbstractOption extends HtmlElement {
 
     toString() {
         if (this.shallow) {
-            return `<td id='${this.id}'>${this.getInnerHTML()}<label>${this.textDescription}</label></td>`;
+            return `<td id='${this.id}'>${this.getInnerHTML()}<label>${this.description}</label></td>`;
         }
-        return `<tr id='${this.id}'><td>${this.textDescription}</td><td>${this.getInnerHTML()}</td></tr>`;
+        return `<tr id='${this.id}'><td>${this.description}</td><td>${this.getInnerHTML()}</td></tr>`;
     }
 
     getInnerHTML() {
@@ -451,37 +454,22 @@ class OptionsGroup extends HtmlElement {
         this.saveFunction = saveFunction;
         this.getFunction = getFunction;
         this.options = [];
-        this.frontContainer = {
-            styling: 'style="display: none;"',
-            id: '',
-            setId(idToSet) {
-                this.id = idToSet;
-            },
-            setStyle(style) {
-                this.styling = `style="${style}"`;
-            },
-            toString() {
-                return `<tr id="${this.id}" ${this.styling}><td><table><tbody>`;
-            },
-        };
-        this.frontContainer.setId(id);
-        this.backContainer = '</tbody></table></td></tr>';
     }
 
     addBooleanOption({
         variable,
         description,
         defaultValue = false,
-        customSaveFunction = this.saveFunction,
-        customGetFunction = this.getFunction,
+        saveFunction = this.saveFunction,
+        getFunction = this.getFunction,
     }) {
         const newOption = new BooleanOption({
             id: `${this.id}-option-${this.options.length}`,
             variable,
             description,
             defaultValue,
-            saveFunction: customSaveFunction,
-            getFunction: customGetFunction,
+            saveFunction,
+            getFunction,
         });
         this.options.push(newOption);
         return newOption;
@@ -494,8 +482,8 @@ class OptionsGroup extends HtmlElement {
         min = 0,
         max = 0,
         step = 1,
-        customSaveFunction = this.saveFunction,
-        customGetFunction = this.getFunction,
+        saveFunction = this.saveFunction,
+        getFunction = this.getFunction,
     }) {
         const newOption = new NumericOption({
             id: `${this.id}-option-${this.options.length}`,
@@ -505,8 +493,8 @@ class OptionsGroup extends HtmlElement {
             min,
             max,
             step,
-            saveFunction: customSaveFunction,
-            getFunction: customGetFunction,
+            saveFunction,
+            getFunction,
         });
         this.options.push(newOption);
         return newOption;
@@ -517,8 +505,8 @@ class OptionsGroup extends HtmlElement {
         description,
         defaultValue = 0,
         options = [],
-        customSaveFunction = this.saveFunction,
-        customGetFunction = this.getFunction,
+        saveFunction = this.saveFunction,
+        getFunction = this.getFunction,
     }) {
         const newOption = new SelectOption({
             id: `${this.id}-option-${this.options.length}`,
@@ -526,8 +514,8 @@ class OptionsGroup extends HtmlElement {
             description,
             defaultValue,
             options,
-            saveFunction: customSaveFunction,
-            getFunction: customGetFunction,
+            saveFunction,
+            getFunction,
         });
         this.options.push(newOption);
         return newOption;
@@ -535,14 +523,14 @@ class OptionsGroup extends HtmlElement {
 
     addGroupedOption({
         description,
-        customSaveFunction = this.saveFunction,
-        customGetFunction = this.getFunction,
+        saveFunction = this.saveFunction,
+        getFunction = this.getFunction,
     }) {
         const newOption = new GroupedOptions({
             id: `${this.id}-option-${this.options.length}`,
             description,
-            saveFunction: customSaveFunction,
-            getFunction: customGetFunction,
+            saveFunction,
+            getFunction,
         });
         this.options.push(newOption);
         return newOption;
@@ -551,12 +539,9 @@ class OptionsGroup extends HtmlElement {
     toString() {
         // If no options have been defined, then don't add any elements
         if (this.options.length === 0) {
-            this.frontContainer.setStyle('display: none;');
-            return this.frontContainer + this.backContainer;
+            return `<tr id="${this.id}" style="display: none;"><td><table><tbody></tbody></table></td></tr>`;
         }
-        this.frontContainer.setStyle('');
-
-        return this.frontContainer + this.options.join('') + this.backContainer;
+        return `<tr id="${this.id}"><td><table><tbody>${this.options.join('')}</tbody></table></td></tr>`;
     }
 
     afterRefreshElement() {
@@ -569,6 +554,7 @@ class OptionsBox extends HtmlElement {
         id,
         heading,
         premium = false,
+        description = '',
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
     }) {
@@ -582,7 +568,10 @@ class OptionsBox extends HtmlElement {
         this.frontContainer = `<form id="${this.id}" action="none"><table style="background:url(//static.pardus.at/img/std/bgd.gif)" width="100%" cellpadding="3" align="center"><tbody><tr>${headerHtml}${heading}</th></tr>`;
         this.backContainer = '</tbody></table></form>';
         this.innerHtml = '';
-        this.description = new DescriptionElement(`${this.id}-description`);
+        this.description = new DescriptionElement({
+            id: `${this.id}-description`,
+            description,
+        });
         this.optionsGroup = new OptionsGroup({
             id: `${this.id}-options-group`,
             premium,
@@ -721,23 +710,23 @@ class OptionsContent extends HtmlElement {
     addBox({
         heading,
         premium = false,
-        customSaveFunction = this.saveFunction,
-        customGetFunction = this.getFunction,
+        saveFunction = this.saveFunction,
+        getFunction = this.getFunction,
     }) {
         let newBox = null;
         if (this.leftBoxes.length <= this.rightBoxes.length) {
             newBox = this.addBoxLeft({
                 heading,
                 premium,
-                customSaveFunction,
-                customGetFunction,
+                saveFunction,
+                getFunction,
             });
         } else {
             newBox = this.addBoxRight({
                 heading,
                 premium,
-                customSaveFunction,
-                customGetFunction,
+                saveFunction,
+                getFunction,
             });
         }
         return newBox;
@@ -746,15 +735,15 @@ class OptionsContent extends HtmlElement {
     addBoxLeft({
         heading,
         premium = false,
-        customSaveFunction = this.saveFunction,
-        customGetFunction = this.getFunction,
+        saveFunction = this.saveFunction,
+        getFunction = this.getFunction,
     }) {
         const newBox = new OptionsBox({
             id: `${this.id}-left-box-${this.leftBoxes.length}`,
             heading,
             premium,
-            saveFunction: customSaveFunction,
-            getFunction: customGetFunction,
+            saveFunction,
+            getFunction,
         });
         this.leftBoxes.push(newBox);
         this.refreshElement();
@@ -764,15 +753,15 @@ class OptionsContent extends HtmlElement {
     addBoxRight({
         heading,
         premium = false,
-        customSaveFunction = this.saveFunction,
-        customGetFunction = this.getFunction,
+        saveFunction = this.saveFunction,
+        getFunction = this.getFunction,
     }) {
         const newBox = new OptionsBox({
             id: `${this.id}-right-box-${this.rightBoxes.length}`,
             heading,
             premium,
-            saveFunction: customSaveFunction,
-            getFunction: customGetFunction,
+            saveFunction,
+            getFunction,
         });
         this.rightBoxes.push(newBox);
         this.refreshElement();
@@ -781,40 +770,40 @@ class OptionsContent extends HtmlElement {
 
     addPremiumBox({
         heading,
-        customSaveFunction = this.saveFunction,
-        customGetFunction = this.getFunction,
+        saveFunction = this.saveFunction,
+        getFunction = this.getFunction,
     }) {
         return this.addBox({
             heading,
             premium: true,
-            customSaveFunction,
-            customGetFunction,
+            saveFunction,
+            getFunction,
         });
     }
 
     addPremiumBoxLeft({
         heading,
-        customSaveFunction = this.saveFunction,
-        customGetFunction = this.getFunction,
+        saveFunction = this.saveFunction,
+        getFunction = this.getFunction,
     }) {
         return this.addBoxLeft({
             heading,
             premium: true,
-            customSaveFunction,
-            customGetFunction,
+            saveFunction,
+            getFunction,
         });
     }
 
     addPremiumBoxRight({
         heading,
-        customSaveFunction = this.saveFunction,
-        customGetFunction = this.getFunction,
+        saveFunction = this.saveFunction,
+        getFunction = this.getFunction,
     }) {
         return this.addBoxRight({
             heading,
             premium: true,
-            customSaveFunction,
-            customGetFunction,
+            saveFunction,
+            getFunction,
         });
     }
 
