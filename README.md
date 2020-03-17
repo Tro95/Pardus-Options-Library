@@ -122,13 +122,13 @@ You should use the `unsafeWindow.PardusOptions.addTab()` method to obtain an Opt
 ##### addBox
 Creates a new box in the contents area of the tab, and returns an object allowing manipulation of the content of the box. Recommended usage is one box per group of related options. This box will be placed on either the left or right side of the screen depending on the length of all the other boxes. If you wish to control the placing, see `addBoxLeft` and `addBoxRight`.
 ```javascript
-addBox({
+OptionsContent.addBox({
     heading,
     description = '',
     premium = false,
     saveFunction = this.saveFunction,
     getFunction = this.getFunction,
-}
+});
 ```
 **heading** [*Required*]: The heading of the box.  
 **description** [*Optional*]: The description text for the box, to be displayed under the heading.  
@@ -149,13 +149,13 @@ const myBox = myTab.addBox({
 ##### addBoxLeft
 Creates a new box in the left column of the contents area of the tab, and returns an object allowing manipulation of the content of the box. Recommended usage is one box per group of related options. This box will be placed on the left side of the screen..
 ```javascript
-addBoxLeft({
+OptionsContent.addBoxLeft({
     heading,
     description = '',
     premium = false,
     saveFunction = this.saveFunction,
     getFunction = this.getFunction,
-}
+});
 ```
 **heading** [*Required*]: The heading of the box.  
 **description** [*Optional*]: The description text for the box, to be displayed under the heading.  
@@ -176,13 +176,13 @@ const myBox = myTab.addBoxLeft({
 ##### addBoxRight
 Creates a new box in the right column of the contents area of the tab, and returns an object allowing manipulation of the content of the box. Recommended usage is one box per group of related options. This box will be placed on the right side of the screen..
 ```javascript
-addBoxLeft({
+OptionsContent.addBoxLeft({
     heading,
     description = '',
     premium = false,
     saveFunction = this.saveFunction,
     getFunction = this.getFunction,
-}
+});
 ```
 **heading** [*Required*]: The heading of the box.  
 **description** [*Optional*]: The description text for the box, to be displayed under the heading.  
@@ -212,13 +212,13 @@ You should use the `OptionsContent.addBox()` method to obtain an OptionsBox obje
 ##### addBooleanOption
 Creates a checkbox within the options box, and binds its value to a variable that can be saved persistently using the `saveFunction`.
 ```javascript
-addBooleanOption({
+OptionsBox.addBooleanOption({
     variable,
     description,
     defaultValue = false,
     customSaveFunction = this.saveFunction,
     customGetFunction = this.getFunction,
-}
+});
 ```
 **variable** [*Required*]: The variable to bind the boolean value to. This will be translated into `${universe}-${variable}` when passed into the save function, to ensure uniqueness across all the universes.  
 **description** [*Required*]: A small amount of text describing what the option is for.  
@@ -241,7 +241,7 @@ myBox.addBooleanOption({
 ##### addNumericOption
 Creates a numeric field within the options box, and binds its value to a variable that can be saved persistently using the `saveFunction`.
 ```javascript
-addNumericOption({
+OptionsBox.addNumericOption({
     variable,
     description,
     defaultValue = 0,
@@ -250,7 +250,7 @@ addNumericOption({
     step = 1,
     saveFunction = this.saveFunction,
     getFunction = this.getFunction,
-}
+});
 ```
 **variable** [*Required*]: The variable to bind the boolean value to. This will be translated into `${universe}-${variable}` when passed into the save function, to ensure uniqueness across all the universes.  
 **description** [*Required*]: A small amount of text describing what the option is for.  
@@ -278,14 +278,14 @@ myBox.addNumericOption({
 ##### addSelectOption
 Creates a dropdown selection field within the options box, and binds its value to a variable that can be saved persistently using the `saveFunction`.
 ```javascript
-addSelectOption({
+OptionsBox.addSelectOption({
     variable,
     description,
     options = [],
     defaultValue = null,
     saveFunction = this.saveFunction,
     getFunction = this.getFunction,
-}
+});
 ```
 **variable** [*Required*]: The variable to bind the boolean value to. This will be translated into `${universe}-${variable}` when passed into the save function, to ensure uniqueness across all the universes.  
 **description** [*Required*]: A small amount of text describing what the option is for.  
