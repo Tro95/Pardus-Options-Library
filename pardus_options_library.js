@@ -1087,7 +1087,7 @@ class PardusOptions extends HtmlElement {
     }
 
     static version() {
-        return 1.4;
+        return 1.5;
     }
 
     addTab({
