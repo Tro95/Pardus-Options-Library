@@ -91,8 +91,8 @@ Creates a new tab and returns an object allowing manipulation of the content of 
 unsafeWindow.PardusOptions.addTab({
     id,
     heading,
-    saveFunction,
-    getFunction
+    saveFunction = PardusOptionsUtility.defaultSaveFunction,
+    getFunction = PardusOptionsUtility.defaultGetFunction,
 });
 ```
 **id** [*Required*]: An identification string with no spaces that must be unique across all scripts using this library.  
@@ -108,10 +108,35 @@ const myTab = unsafeWindow.PardusOptions.addTab({
     id: 'my-scripts-tab',
     heading: 'My Script',
     saveFunction: GM_setValue,
-    getFunction: GM_getValue
+    getFunction: GM_getValue,
 });
 ```
+##### addOrGetTab
+Returns an existing tab with the same `id`, or creates a new tab if it does not exist. This is to support sharing tabs across scripts in a safer manner, as the execution order of scripts is not guaranteed.
+```javascript
+unsafeWindow.PardusOptions.addOrGetTab({
+    id,
+    heading,
+    saveFunction = PardusOptionsUtility.defaultSaveFunction,
+    getFunction = PardusOptionsUtility.defaultGetFunction,
+});
+```
+**id** [*Required*]: An identification string with no spaces that must be unique across all scripts using this library.  
+**heading** [*Required*]: The heading of the tab. You should ensure this string is not too long to break the formatting.  
+**saveFunction** [*Optional*]: A reference to a function that can save a persistent value for you. It is highly recommended to put a value of `GM_setValue` here unless you are sharing the tab across multiple scripts.  
+**getFunction** [*Optional*]: A reference to a function that can retrieve a persistent value for you. It is highly recommended to put a value of `GM_getValue` here unless you are sharing the tab across multiple scripts.  
 
+Returns an object of type OptionsContent, allowing manipulation of the content within the tab's content area.
+
+Example:
+```javascript
+const myTab = unsafeWindow.PardusOptions.addOrGetTab({
+    id: 'my-scripts-tab',
+    heading: 'My Script',
+    saveFunction: GM_setValue,
+    getFunction: GM_getValue,
+});
+```
 
 ### Class OptionsContent
 Represents all the content within a single tab, allowing for easy creation of OptionsBoxes.
@@ -125,6 +150,8 @@ Creates a new box in the contents area of the tab, and returns an object allowin
 OptionsContent.addBox({
     heading,
     description = '',
+    imageLeft = '',
+    imageRight = '',
     premium = false,
     saveFunction = this.saveFunction,
     getFunction = this.getFunction,
@@ -132,6 +159,8 @@ OptionsContent.addBox({
 ```
 **heading** [*Required*]: The heading of the box.  
 **description** [*Optional*]: The description text for the box, to be displayed under the heading.  
+**imageLeft** [*Optional*]: The src value of an image to appear to the left of the description.  
+**imageRight** [*Optional*]: The src value of an image to appear to the right of the description.  
 **premium** [*Optional*]: A boolean value on whether to style the box with the premium styling or not. Useful for separating options relating to features exclusive for premium members.   
 **saveFunction** [*Optional*]: A reference to a function that can save a persistent value for you. Will inherit the save function of the tab.  
 **getFunction** [*Optional*]: A reference to a function that can retrieve a persistent value for you. Will inherit the get function of the tab.  
@@ -142,7 +171,7 @@ Example:
 ```javascript
 const myBox = myTab.addBox({
     heading: 'Main Options',
-    description: 'These are the main options for my script.'
+    description: 'These are the main options for my script.',
 });
 ```
 
@@ -152,6 +181,8 @@ Creates a new box in the left column of the contents area of the tab, and return
 OptionsContent.addBoxLeft({
     heading,
     description = '',
+    imageLeft = '',
+    imageRight = '',
     premium = false,
     saveFunction = this.saveFunction,
     getFunction = this.getFunction,
@@ -159,6 +190,8 @@ OptionsContent.addBoxLeft({
 ```
 **heading** [*Required*]: The heading of the box.  
 **description** [*Optional*]: The description text for the box, to be displayed under the heading.  
+**imageLeft** [*Optional*]: The src value of an image to appear to the left of the description.  
+**imageRight** [*Optional*]: The src value of an image to appear to the right of the description.  
 **premium** [*Optional*]: A boolean value on whether to style the box with the premium styling or not. Useful for separating options relating to features exclusive for premium members.  
 **saveFunction** [*Optional*]: A reference to a function that can save a persistent value for you. Will inherit the save function of the tab.  
 **getFunction** [*Optional*]: A reference to a function that can retrieve a persistent value for you. Will inherit the get function of the tab.  
@@ -169,7 +202,7 @@ Example:
 ```javascript
 const myBox = myTab.addBoxLeft({
     heading: 'Main Options',
-    description: 'These are the main options for my script.'
+    description: 'These are the main options for my script.',
 });
 ```
 
@@ -179,6 +212,8 @@ Creates a new box in the right column of the contents area of the tab, and retur
 OptionsContent.addBoxLeft({
     heading,
     description = '',
+    imageLeft = '',
+    imageRight = '',
     premium = false,
     saveFunction = this.saveFunction,
     getFunction = this.getFunction,
@@ -186,6 +221,8 @@ OptionsContent.addBoxLeft({
 ```
 **heading** [*Required*]: The heading of the box.  
 **description** [*Optional*]: The description text for the box, to be displayed under the heading.  
+**imageLeft** [*Optional*]: The src value of an image to appear to the left of the description.  
+**imageRight** [*Optional*]: The src value of an image to appear to the right of the description.  
 **premium** [*Optional*]: A boolean value on whether to style the box with the premium styling or not. Useful for separating options relating to features exclusive for premium members.  
 **saveFunction** [*Optional*]: A reference to a function that can save a persistent value for you. Will inherit the save function of the tab.  
 **getFunction** [*Optional*]: A reference to a function that can retrieve a persistent value for you. Will inherit the get function of the tab.  
@@ -196,7 +233,7 @@ Example:
 ```javascript
 const myBox = myTab.addBoxLeft({
     heading: 'Main Options',
-    description: 'These are the main options for my script.'
+    description: 'These are the main options for my script.',
 });
 ```
 
@@ -233,7 +270,7 @@ Example:
 myBox.addBooleanOption({
     variable: 'enable_super_cool_feature',
     description: 'Enable the super cool feature',
-    defaultValue: true
+    defaultValue: true,
 });
 ```
 
@@ -270,7 +307,7 @@ myBox.addNumericOption({
     description: 'Amount of power to use',
     defaultValue: 50,
     min: 1,
-    max: 100
+    max: 100,
 });
 ```
 
@@ -315,7 +352,7 @@ myBox.addNumericOption({
             value: 'defensive',
             text: 'Defensive'
         },
-    ]
+    ],
 });
 ```
 
