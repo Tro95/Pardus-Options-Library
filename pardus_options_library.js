@@ -24,11 +24,26 @@ class PardusOptionsUtility {
                 throw new Error('Unable to determine universe');
         }
     }
+
+    /**
+     *  Returns the universe-specific name of a variable
+     */
+    static getVariableName(variableName) {
+        return `${this.getUniverse()}_${variableName}`;
+    }
 }
 
 class HtmlElement {
     constructor(id) {
+        // Make sure it is a valid html identifier
+        const validIds = RegExp('^[a-zA-Z][\\w:.-]*$');
+        if (!validIds.test(id)) {
+            throw new Error(`Id '${id}' is not a valid HTML identifier.`);
+        }
+
         this.id = id;
+        this.afterRefreshHooks = [];
+        this.beforeRefreshHooks = [];
     }
 
     toString() {
@@ -36,9 +51,19 @@ class HtmlElement {
     }
 
     beforeRefreshElement() {
+        for (const func of this.beforeRefreshHooks) {
+            func();
+        }
     }
 
     afterRefreshElement() {
+        for (const func of this.afterRefreshHooks) {
+            func();
+        }
+    }
+
+    addAfterRefreshHook(func) {
+        this.afterRefreshHooks.push(func);
     }
 
     refreshElement() {
@@ -65,13 +90,15 @@ class DescriptionElement extends HtmlElement {
     constructor({
         id,
         description = '',
+        imageLeft = '',
+        imageRight = '',
     }) {
         super(id);
-        this.backContainer = '</tr></tbody></table></td></tr>';
+        this.backContainer = '';
         this.description = description;
-        this.imageLeft = '';
-        this.imageRight = '';
-        this.alignment = 'center';
+        this.imageLeft = imageLeft;
+        this.imageRight = imageRight;
+        this.alignment = '';
         this.frontContainer = {
             styling: 'style="display: none;"',
             id: '',
@@ -82,31 +109,24 @@ class DescriptionElement extends HtmlElement {
                 this.styling = `style="${style}"`;
             },
             toString() {
-                return `<tr id=${this.id} ${this.styling}><td><table><tbody><tr>`;
+                return ``;
             },
         };
         this.frontContainer.setId(id);
     }
 
     addImageLeft(imageSrc) {
-        this.imageLeft = `<td><img src="${imageSrc}"></td>`;
+        this.imageLeft = imageSrc;
         this.refreshElement();
     }
 
     addImageRight(imageSrc) {
-        this.imageRight = `<td><img src="${imageSrc}"></td>`;
+        this.imageRight = imageSrc;
         this.refreshElement();
     }
 
-    setDescription(descriptionToSet) {
-        this.description = descriptionToSet;
-
-        if (this.description === '') {
-            this.frontContainer.setStyle('display: none;');
-        } else {
-            this.frontContainer.setStyle('');
-        }
-
+    setDescription(description) {
+        this.description = description;
         this.refreshElement();
     }
 
@@ -116,7 +136,28 @@ class DescriptionElement extends HtmlElement {
     }
 
     toString() {
-        return `${this.frontContainer + this.imageLeft}<td align="${this.alignment}">${this.imageRight}${this.description}</td>${this.backContainer}`;
+        let html = `<tr id=${this.id} style=''><td><table><tbody><tr>`;
+
+        if (this.imageLeft && this.imageLeft !== '') {
+            html = `${html}<td><img src="${this.imageLeft}"></td>`;
+        }
+
+        // If there's no specific alignment, work out the most ideal one to use
+        if (this.alignment === '') {
+            if (this.imageLeft === '' && this.imageRight === '') {
+                html = `${html}<td align="left">${this.description}</td>`;
+            } else {
+                html = `${html}<td align="center">${this.description}</td>`;
+            }
+        } else {
+            html = `${html}<td align="${this.alignment}">${this.description}</td>`;            
+        }
+
+        if (this.imageRight && this.imageRight !== '') {
+            html = `${html}<td><img src="${this.imageRight}"></td>`;
+        }
+
+        return `${html}</tr></tbody></table></td></tr>`;
     }
 }
 
@@ -152,7 +193,7 @@ class AbstractOption extends HtmlElement {
     }
 
     getValue() {
-        return this.getFunction(`${PardusOptionsUtility.getUniverse()}_${this.variable}`, this.defaultValue);
+        return this.getFunction(`${PardusOptionsUtility.getVariableName(this.variable)}`, this.defaultValue);
     }
 
     getCurrentValue() {
@@ -164,7 +205,7 @@ class AbstractOption extends HtmlElement {
     }
 
     saveValue() {
-        this.saveFunction(`${PardusOptionsUtility.getUniverse()}_${this.variable}`, this.getCurrentValue());
+        this.saveFunction(`${PardusOptionsUtility.getVariableName(this.variable)}`, this.getCurrentValue());
     }
 }
 
@@ -543,10 +584,6 @@ class OptionsGroup extends HtmlElement {
         }
         return `<tr id="${this.id}"><td><table><tbody>${this.options.join('')}</tbody></table></td></tr>`;
     }
-
-    afterRefreshElement() {
-        this.setFunctions();
-    }
 }
 
 class OptionsBox extends HtmlElement {
@@ -555,6 +592,8 @@ class OptionsBox extends HtmlElement {
         heading,
         premium = false,
         description = '',
+        imageLeft = '',
+        imageRight = '',
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
     }) {
@@ -571,6 +610,8 @@ class OptionsBox extends HtmlElement {
         this.description = new DescriptionElement({
             id: `${this.id}-description`,
             description,
+            imageLeft,
+            imageRight,
         });
         this.optionsGroup = new OptionsGroup({
             id: `${this.id}-options-group`,
@@ -581,6 +622,13 @@ class OptionsBox extends HtmlElement {
         this.saveButtonRow = new SaveButtonRow({
             id: `${this.id}-save`,
             premium,
+        });
+        this.addAfterRefreshHook(() => {
+            this.optionsGroup.afterRefreshElement();
+            this.saveButtonRow.afterRefreshElement();
+        });
+        this.addAfterRefreshHook(() => {
+            this.setFunctions();
         });
     }
 
@@ -602,10 +650,6 @@ class OptionsBox extends HtmlElement {
                 },
             });
         }
-    }
-
-    afterRefreshElement() {
-        this.setFunctions();
     }
 
     addBooleanOption({
@@ -710,6 +754,9 @@ class OptionsContent extends HtmlElement {
     addBox({
         heading,
         premium = false,
+        description = '',
+        imageLeft = '',
+        imageRight = '',
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
     }) {
@@ -718,6 +765,9 @@ class OptionsContent extends HtmlElement {
             newBox = this.addBoxLeft({
                 heading,
                 premium,
+                description,
+                imageLeft,
+                imageRight,
                 saveFunction,
                 getFunction,
             });
@@ -725,6 +775,9 @@ class OptionsContent extends HtmlElement {
             newBox = this.addBoxRight({
                 heading,
                 premium,
+                description,
+                imageLeft,
+                imageRight,
                 saveFunction,
                 getFunction,
             });
@@ -735,6 +788,9 @@ class OptionsContent extends HtmlElement {
     addBoxLeft({
         heading,
         premium = false,
+        description = '',
+        imageLeft = '',
+        imageRight = '',
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
     }) {
@@ -742,6 +798,9 @@ class OptionsContent extends HtmlElement {
             id: `${this.id}-left-box-${this.leftBoxes.length}`,
             heading,
             premium,
+            description,
+            imageLeft,
+            imageRight,
             saveFunction,
             getFunction,
         });
@@ -753,6 +812,9 @@ class OptionsContent extends HtmlElement {
     addBoxRight({
         heading,
         premium = false,
+        description = '',
+        imageLeft = '',
+        imageRight = '',
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
     }) {
@@ -760,6 +822,9 @@ class OptionsContent extends HtmlElement {
             id: `${this.id}-right-box-${this.rightBoxes.length}`,
             heading,
             premium,
+            description,
+            imageLeft,
+            imageRight,
             saveFunction,
             getFunction,
         });
@@ -770,12 +835,18 @@ class OptionsContent extends HtmlElement {
 
     addPremiumBox({
         heading,
+        description = '',
+        imageLeft = '',
+        imageRight = '',
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
     }) {
         return this.addBox({
             heading,
             premium: true,
+            description,
+            imageLeft,
+            imageRight,
             saveFunction,
             getFunction,
         });
@@ -783,12 +854,18 @@ class OptionsContent extends HtmlElement {
 
     addPremiumBoxLeft({
         heading,
+        description = '',
+        imageLeft = '',
+        imageRight = '',
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
     }) {
         return this.addBoxLeft({
             heading,
             premium: true,
+            description,
+            imageLeft,
+            imageRight,
             saveFunction,
             getFunction,
         });
@@ -796,12 +873,18 @@ class OptionsContent extends HtmlElement {
 
     addPremiumBoxRight({
         heading,
+        description = '',
+        imageLeft = '',
+        imageRight = '',
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
     }) {
         return this.addBoxRight({
             heading,
             premium: true,
+            description,
+            imageLeft,
+            imageRight,
             saveFunction,
             getFunction,
         });
@@ -914,9 +997,10 @@ class Tab {
 class TabsElement extends HtmlElement {
     constructor({
         id,
+        labels = [],
     }) {
         super(id);
-        this.labels = [];
+        this.labels = labels;
     }
 
     addLabel({
@@ -933,9 +1017,10 @@ class TabsElement extends HtmlElement {
 class ContentsArea extends HtmlElement {
     constructor({
         id,
+        contents = [],
     }) {
         super(id);
-        this.contents = [];
+        this.contents = contents;
     }
 
     addContent({
@@ -959,17 +1044,19 @@ class PardusOptions extends HtmlElement {
     constructor({
         upgradeOptions = false,
         tabs = [],
-        tabsElement = new TabsElement({
-            id: 'options-tabs',
-        }),
-        contentElement = new ContentsArea({
-            id: 'options-content',
-        }),
+        labels = [],
+        contents = [],
     } = {}) {
         super('options-area');
         this.tabs = tabs;
-        this.tabsElement = tabsElement;
-        this.contentElement = contentElement;
+        this.tabsElement = new TabsElement({
+            id: 'options-tabs',
+            labels,
+        });
+        this.contentElement = new ContentsArea({
+            id: 'options-content',
+            contents
+        });
 
         if (upgradeOptions) {
             return;
@@ -1018,6 +1105,13 @@ class PardusOptions extends HtmlElement {
             getFunction,
         });
 
+        // Check for id uniqueness
+        for (const tab of this.tabs) {
+            if (tab.id === newTab.id) {
+                throw new Error(`Tab '${newTab.id}' already exists!`);
+            }
+        }
+
         this.tabs.push(newTab);
         this.tabsElement.addLabel({
             label: newTab.getLabel(),
@@ -1029,6 +1123,32 @@ class PardusOptions extends HtmlElement {
         this.refreshElement();
 
         return newTab.getContent();
+    }
+
+    /**
+     *  Allows safe fetching of existing tabs, creating the tab if it doesn't exist. This is useful
+     *  when multiple scripts share the same tab, and the order of execution isn't guaranteed.
+     */
+    addOrGetTab({
+        id,
+        heading,
+        saveFunction = PardusOptionsUtility.defaultSaveFunction,
+        getFunction = PardusOptionsUtility.defaultGetFunction,
+    }) {
+        // Check to see if the tab already exists, and if so return it
+        for (const tab of this.tabs) {
+            if (tab.id === id) {
+                return tab.getContent();
+            }
+        }
+
+        // If we reach here it means the tab doesn't currently exist, so create it
+        return this.addTab({
+            id,
+            heading,
+            saveFunction,
+            getFunction,
+        });
     }
 
     setActiveTab(id) {
@@ -1067,8 +1187,8 @@ if (document.location.pathname === '/options.php') {
         unsafeWindow.PardusOptions = new PardusOptions({
             upgradeOptions: true,
             tabs: unsafeWindow.PardusOptions.tabs,
-            tabsElement: unsafeWindow.PardusOptions.tabsElement,
-            contentElement: unsafeWindow.PardusOptions.contentElement,
+            labels: unsafeWindow.PardusOptions.tabsElement.labels,
+            contents: unsafeWindow.PardusOptions.contentElement.contents,
         });
     }
 }
