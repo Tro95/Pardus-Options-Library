@@ -1,12 +1,12 @@
-/* global unsafeWindow */
+/* global GM_setValue, GM_getValue */
 
 class PardusOptionsUtility {
     static defaultSaveFunction(key, value) {
-        console.warn(`Default save function not overridden, script cannot save key '${key}' with value '${value}'`);
+        return GM_setValue(key, value);
     }
 
     static defaultGetFunction(key, defaultValue = null) {
-        console.warn(`Default get function not overridden, script cannot get key '${key}' with default value ${defaultValue}'`);
+        return GM_getValue(key, defaultValue);
     }
 
     /**
@@ -31,11 +31,19 @@ class PardusOptionsUtility {
     static getVariableName(variableName) {
         return `${this.getUniverse()}_${variableName}`;
     }
+
+    static setActiveTab(id) {
+        window.localStorage.setItem('pardusOptionsOpenTab', id);
+        window.dispatchEvent(new window.Event('storage'));
+    }
 }
 
 class HtmlElement {
     constructor(id) {
         // Make sure it is a valid html identifier
+        if (!id || id === '') {
+            throw new Error('Id cannot be empty.');
+        }
         const validIds = RegExp('^[a-zA-Z][\\w:.-]*$');
         if (!validIds.test(id)) {
             throw new Error(`Id '${id}' is not a valid HTML identifier.`);
@@ -44,6 +52,13 @@ class HtmlElement {
         this.id = id;
         this.afterRefreshHooks = [];
         this.beforeRefreshHooks = [];
+    }
+
+    addEventListener(eventName, listener) {
+        this.getElement().addEventListener(eventName, listener, false);
+        this.addAfterRefreshHook(() => {
+            this.getElement().addEventListener(eventName, listener, false);
+        });
     }
 
     toString() {
@@ -81,6 +96,14 @@ class HtmlElement {
         template.innerHTML = this.toString();
         return template.content.firstChild;
     }
+
+    appendChild(ele) {
+        return document.getElementById(this.id).appendChild(ele);
+    }
+
+    appendTableChild(ele) {
+        return document.getElementById(this.id).firstChild.appendChild(ele);
+    }
 }
 
 /**
@@ -109,7 +132,7 @@ class DescriptionElement extends HtmlElement {
                 this.styling = `style="${style}"`;
             },
             toString() {
-                return ``;
+                return '';
             },
         };
         this.frontContainer.setId(id);
@@ -150,7 +173,7 @@ class DescriptionElement extends HtmlElement {
                 html = `${html}<td align="center">${this.description}</td>`;
             }
         } else {
-            html = `${html}<td align="${this.alignment}">${this.description}</td>`;            
+            html = `${html}<td align="${this.alignment}">${this.description}</td>`;
         }
 
         if (this.imageRight && this.imageRight !== '') {
@@ -170,6 +193,7 @@ class AbstractOption extends HtmlElement {
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
         shallow = false,
+        reverse = false,
     }) {
         super(id);
         this.variable = variable;
@@ -179,13 +203,17 @@ class AbstractOption extends HtmlElement {
         this.defaultValue = defaultValue;
         this.inputId = `${this.id}-input`;
         this.shallow = shallow;
+        this.reverse = reverse;
     }
 
     toString() {
         if (this.shallow) {
             return `<td id='${this.id}'>${this.getInnerHTML()}<label>${this.description}</label></td>`;
         }
-        return `<tr id='${this.id}'><td>${this.description}</td><td>${this.getInnerHTML()}</td></tr>`;
+        if (this.reverse) {
+            return `<tr id='${this.id}'><td>${this.getInnerHTML()}</td><td><label for='${this.inputId}'>${this.description}</label></td></tr>`;
+        }
+        return `<tr id='${this.id}'><td><label for='${this.inputId}'>${this.description}:</label></td><td>${this.getInnerHTML()}</td></tr>`;
     }
 
     getInnerHTML() {
@@ -495,6 +523,11 @@ class OptionsGroup extends HtmlElement {
         this.saveFunction = saveFunction;
         this.getFunction = getFunction;
         this.options = [];
+        this.addAfterRefreshHook(() => {
+            for (const option of this.options) {
+                option.afterRefreshElement();
+            }
+        });
     }
 
     addBooleanOption({
@@ -749,6 +782,15 @@ class OptionsContent extends HtmlElement {
         this.getFunction = getFunction;
         this.leftBoxes = [];
         this.rightBoxes = [];
+        this.topBoxes = [];
+        this.addAfterRefreshHook(() => {
+            for (const box of this.leftBoxes) {
+                box.afterRefreshElement();
+            }
+            for (const box of this.rightBoxes) {
+                box.afterRefreshElement();
+            }
+        });
     }
 
     addBox({
@@ -759,9 +801,20 @@ class OptionsContent extends HtmlElement {
         imageRight = '',
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
+        top = false,
     }) {
         let newBox = null;
-        if (this.leftBoxes.length <= this.rightBoxes.length) {
+        if (top) {
+            newBox = this.addBoxTop({
+                heading,
+                premium,
+                description,
+                imageLeft,
+                imageRight,
+                saveFunction,
+                getFunction,
+            });
+        } else if (this.leftBoxes.length <= this.rightBoxes.length) {
             newBox = this.addBoxLeft({
                 heading,
                 premium,
@@ -782,6 +835,30 @@ class OptionsContent extends HtmlElement {
                 getFunction,
             });
         }
+        return newBox;
+    }
+
+    addBoxTop({
+        heading,
+        premium = false,
+        description = '',
+        imageLeft = '',
+        imageRight = '',
+        saveFunction = this.saveFunction,
+        getFunction = this.getFunction,
+    }) {
+        const newBox = new OptionsBox({
+            id: `${this.id}-top-box-${this.topBoxes.length}`,
+            heading,
+            premium,
+            description,
+            imageLeft,
+            imageRight,
+            saveFunction,
+            getFunction,
+        });
+        this.topBoxes.push(newBox);
+        this.refreshElement();
         return newBox;
     }
 
@@ -894,16 +971,7 @@ class OptionsContent extends HtmlElement {
         if (this.content !== null) {
             return this.content;
         }
-        return `<table hidden class="messagestyle" id="${this.id}" style="background:url(//static.pardus.at/img/std/bgdark.gif)"><tbody><tr><td><div align="center"><h1>${this.heading}</h1></div><table width="100%" align="center"><tbody><tr><td id="${this.id}-left" width="350" valign="top">${this.leftBoxes.join('<br><br>')}</td><td width="40"></td><td id="${this.id}-right" width="350" valign="top">${this.rightBoxes.join('<br><br>')}</td></tr></tbody></table></td></tr></tbody></table>`;
-    }
-
-    afterRefreshElement() {
-        for (const box of this.leftBoxes) {
-            box.afterRefreshElement();
-        }
-        for (const box of this.rightBoxes) {
-            box.afterRefreshElement();
-        }
+        return `<table hidden class="messagestyle" id="${this.id}" style="background:url(//static.pardus.at/img/std/bgdark.gif)"><tbody><tr><td><div align="center"><h1>${this.heading}</h1></div><table width="100%" align="center"><tbody><tr><td id="${this.id}-top" colspan="3" valign="top">${this.topBoxes.join('<br><br>')}</td></tr><tr><td id="${this.id}-left" width="350" valign="top">${this.leftBoxes.join('<br><br>')}</td><td width="40"></td><td id="${this.id}-right" width="350" valign="top">${this.rightBoxes.join('<br><br>')}</td></tr></tbody></table></td></tr></tbody></table`;
     }
 
     setActive() {
@@ -973,6 +1041,18 @@ class Tab {
         this.getFunction = getFunction;
     }
 
+    addListeners() {
+        this.getLabel().getElement().addEventListener('click', () => PardusOptionsUtility.setActiveTab(this.id), true);
+        window.addEventListener('storage', () => {
+            if (window.localStorage.getItem('pardusOptionsOpenTab') === this.id && !this.active) {
+                this.setActive();
+            }
+            if (window.localStorage.getItem('pardusOptionsOpenTab') !== this.id && this.active) {
+                this.setInactive();
+            }
+        });
+    }
+
     setActive() {
         this.label.setActive();
         this.content.setActive();
@@ -994,71 +1074,69 @@ class Tab {
     }
 }
 
-class TabsElement extends HtmlElement {
+class TabsRow extends HtmlElement {
     constructor({
         id,
-        labels = [],
     }) {
         super(id);
-        this.labels = labels;
     }
 
     addLabel({
         label,
     }) {
-        this.labels.push(label);
+        this.appendChild(label.toElement());
     }
 
     toString() {
-        return `<table id="${this.id}" width="${this.labels.length * 96}" cellspacing="0" cellpadding="0" border="0" align="left"><tbody><tr>${this.labels.join('')}</tr></tbody></table>`;
+        return `<tr id="${this.id}"></tr>`;
+    }
+}
+
+class TabsElement extends HtmlElement {
+    constructor({
+        id,
+    }) {
+        super(id);
+        this.tabsRow = new TabsRow({
+            id: `${this.id}-row`,
+        });
+    }
+
+    addLabel({
+        label,
+    }) {
+        this.tabsRow.addLabel({
+            label,
+        });
+    }
+
+    toString() {
+        return `<table id="${this.id}" cellspacing="0" cellpadding="0" border="0" align="left"><tbody>${this.tabsRow}</tbody></table>`;
     }
 }
 
 class ContentsArea extends HtmlElement {
     constructor({
         id,
-        contents = [],
     }) {
         super(id);
-        this.contents = contents;
     }
 
     addContent({
         content,
     }) {
-        this.contents.push(content);
+        this.appendChild(document.createElement('div').appendChild(content.toElement()));
+        content.afterRefreshElement();
     }
 
     toString() {
-        return `<tr id="${this.id}"><td>${this.contents.join('')}</td></tr>`;
-    }
-
-    afterRefreshElement() {
-        for (const content of this.contents) {
-            content.afterRefreshElement();
-        }
+        return `<tr id="${this.id}"></tr>`;
     }
 }
 
-class PardusOptions extends HtmlElement {
-    constructor({
-        upgradeOptions = false,
-        tabs = [],
-        labels = [],
-        contents = [],
-    } = {}) {
-        super('options-area');
-        this.tabs = tabs;
-        this.tabsElement = new TabsElement({
-            id: 'options-tabs',
-            labels,
-        });
-        this.contentElement = new ContentsArea({
-            id: 'options-content',
-            contents
-        });
-
-        if (upgradeOptions) {
+class PardusOptions {
+    static init() {
+        if (document.getElementById('options-area')) {
             return;
         }
 
@@ -1073,7 +1151,7 @@ class PardusOptions extends HtmlElement {
         defaultPardusOptionsContent.remove();
 
         // Add this object to the DOM within the main containing element
-        pardusMainElement.appendChild(this.toElement());
+        pardusMainElement.appendChild(this.getPardusOptionsElement());
 
         // Add the Pardus options back in
         this.addTab({
@@ -1083,14 +1161,32 @@ class PardusOptions extends HtmlElement {
         });
 
         // Set the Pardus options tab to be active by default
-        this.setActiveTab('pardus-default');
+        PardusOptionsUtility.setActiveTab('pardus-default');
     }
 
     static version() {
-        return 1.5;
+        return 1.6;
     }
 
-    addTab({
+    static getTabsElement() {
+        return new TabsElement({
+            id: 'options-tabs',
+        });
+    }
+
+    static getContentElement() {
+        return new ContentsArea({
+            id: 'options-content',
+        });
+    }
+
+    static getPardusOptionsElement() {
+        const template = document.createElement('template');
+        template.innerHTML = `<table id="options-area"><tbody><tr><td>${this.getTabsElement()}</td></tr>${this.getContentElement()}</tbody></table>`;
+        return template.content.firstChild;
+    }
+
+    static addTab({
         id,
         heading,
         content = null,
@@ -1106,72 +1202,21 @@ class PardusOptions extends HtmlElement {
         });
 
         // Check for id uniqueness
-        for (const tab of this.tabs) {
-            if (tab.id === newTab.id) {
-                throw new Error(`Tab '${newTab.id}' already exists!`);
-            }
+        if (document.getElementById(newTab.id)) {
+            throw new Error(`Tab '${newTab.id}' already exists!`);
         }
 
-        this.tabs.push(newTab);
-        this.tabsElement.addLabel({
+        this.getTabsElement().addLabel({
             label: newTab.getLabel(),
         });
-        this.contentElement.addContent({
+
+        this.getContentElement().addContent({
             content: newTab.getContent(),
         });
 
-        this.refreshElement();
+        newTab.addListeners();
 
         return newTab.getContent();
-    }
-
-    /**
-     *  Allows safe fetching of existing tabs, creating the tab if it doesn't exist. This is useful
-     *  when multiple scripts share the same tab, and the order of execution isn't guaranteed.
-     */
-    addOrGetTab({
-        id,
-        heading,
-        saveFunction = PardusOptionsUtility.defaultSaveFunction,
-        getFunction = PardusOptionsUtility.defaultGetFunction,
-    }) {
-        // Check to see if the tab already exists, and if so return it
-        for (const tab of this.tabs) {
-            if (tab.id === id) {
-                return tab.getContent();
-            }
-        }
-
-        // If we reach here it means the tab doesn't currently exist, so create it
-        return this.addTab({
-            id,
-            heading,
-            saveFunction,
-            getFunction,
-        });
-    }
-
-    setActiveTab(id) {
-        for (const tab of this.tabs) {
-            if (tab.id === id) {
-                tab.setActive();
-            } else {
-                tab.setInactive();
-            }
-        }
-    }
-
-    afterRefreshElement() {
-        // Add the tab-switching logic
-        for (const tab of this.tabs) {
-            tab.getLabel().getElement().addEventListener('click', () => this.setActiveTab(tab.id), true);
-        }
-
-        this.contentElement.afterRefreshElement();
-    }
-
-    toString() {
-        return `<table id="options-area"><tbody><tr><td>${this.tabsElement}</td></tr>${this.contentElement}</tbody></table>`;
     }
 }
 
@@ -1179,16 +1224,5 @@ class PardusOptions extends HtmlElement {
   *  Add the Options object to the page for all scripts to use
   */
 if (document.location.pathname === '/options.php') {
-    if (typeof unsafeWindow.PardusOptions === 'undefined' || !unsafeWindow.PardusOptions) {
-        unsafeWindow.PardusOptions = new PardusOptions();
-    } else if (unsafeWindow.PardusOptions && typeof unsafeWindow.PardusOptions.constructor.version === 'function' && unsafeWindow.PardusOptions.constructor.version() < PardusOptions.version()) {
-        // Upgrade the version if two scripts use different ones
-        console.log(`Upgrading Pardus Options Library from version ${unsafeWindow.PardusOptions.constructor.version()} to ${PardusOptions.version()}.`);
-        unsafeWindow.PardusOptions = new PardusOptions({
-            upgradeOptions: true,
-            tabs: unsafeWindow.PardusOptions.tabs,
-            labels: unsafeWindow.PardusOptions.tabsElement.labels,
-            contents: unsafeWindow.PardusOptions.contentElement.contents,
-        });
-    }
+    PardusOptions.init();
 }

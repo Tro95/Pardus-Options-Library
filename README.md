@@ -7,14 +7,13 @@ At the top of your Tampermonkey script, ensure you have the following lines:
 // @include     http*://*.pardus.at/options.php
 // @grant       GM_setValue
 // @grant       GM_getValue
-// @grant       unsafeWindow
-// @require     https://raw.githubusercontent.com/Tro95/Pardus-Options-Library/v1.4/pardus_options_library.js
+// @require     https://raw.githubusercontent.com/Tro95/Pardus-Options-Library/v2.0/pardus_options_library.js
 ```
-The `GM_setValue` and `GM_getValue` methods are required to persistently store the user's settings. The `unsafeWindow` object is required to allow multiple scripts to use this library concurrently. It is the only supported way to interact with the library.
+The `GM_setValue` and `GM_getValue` methods are required to persistently store the user's settings.
 
 ### Multiple Scripts
 
-This library is safe to be included by multiple scripts. Tampermonkey runs each of the user's script in turn, and each script using this library will attempt to load it in and embed it onto the page in the `unsafeWindow` object. If the library has already been embedded by a prior script, loading in the library for a second time will perform a version check, and the greater version will be kept. In swapping an older version for a greater version, all internal objects will be copied over.
+This library is safe to be included by multiple scripts.
 
 ## Usage
 
@@ -24,18 +23,16 @@ if (document.location.pathname === '/options.php') {
     // Option-related logic goes here
 }
 ```
-The library is available through a singleton object `unsafeWindow.PardusOptions`. It is recommended to abstract your options logic into a separate function.
+The library is available through a static object `PardusOptions`. It is recommended to abstract your options logic into a separate function.
 
 ```javascript
 function myOptionsLogic() {
     /**
      *  Create the tab for your script
      */
-    const myScriptsTab = unsafeWindow.PardusOptions.addTab({
+    const myScriptsTab = PardusOptions.addTab({
         heading: 'My Script',
-        id: 'my-script',
-        saveFunction: GM_setValue,
-        getFunction: GM_getValue
+        id: 'my-script'
     });
 
     /**
@@ -62,33 +59,23 @@ if (document.location.pathname === '/options.php') {
 }
 ```
 
-### Saving Variables And Scoping
-
-One of the early design decisions was whether to make the library a shared singleton object between all scripts, or let each script have their own version. Due to performance and complexity constraints the shared singleton approach was chosen, however this has caused some problems with Tampermonkey scoping.
-
-From Tampermonkey's point of view, this library will exist only within the scope of one script at any point in time, and this script will be the one to have embedded its instance of the library object `unsafeWindow.PardusOptions`. Any other script attempting to access the `unsafeWindow.PardusOptions` object will cause any Tampermonkey-related methods to execute in the scope of the initial script. This is particularly problematic for the `GM_getValue` and `GM_setValue` methods, as all values being saved in all scripts using this library (when on the options page) will be saved in the scope of a single script, and irretrievable outside the library.
-
-To solve this problem the library has abstracted away the `GM_getValue` and `GM_setValue` methods, and instead allows you to pass in the `GM_getValue` and `GM_setValue` methods from your script that are correctly scoped at runtime to all library object constructors. These methods are passed down to all smaller objects in turn, so it is recommended to set them on the `unsafeWindow.PardusOptions.addTab()` call, as opposd to any further down. If you plan to share the same tab with multiple scripts, then you will have to pass the `GM_getValue` and `GM_setValue` methods in at the `OptionsContent.addBox()` call instead.
-
-If you ever encounter log lines saying `Default save function not overridden, script cannot save key '${key}' with value '${value}'` or `Default get function not overridden, script cannot get key '${key}' with default value ${defaultValue}'`, it means somepart of the library has not received the correctly-scoped `GM_getValue` and `GM_setValue` methods and that you should pass them in.
-
 ## Reference
 
 ### PardusOptions Object
-`unsafeWindow.PardusOptions`
+`PardusOptions`
 #### Creation
-This is a singleton object that you should not construct, and as such the constructor is not documented here. Including the library in your script will automatically create it on the relevant options page.
+This is a static object that you should not construct, and as such the constructor is not documented here. Including the library in your script will automatically initialise it on the relevant options page.
 #### Methods
 
 ##### version
-Static method, returning the version of the library.
+Returns the version of the library.
 ```javascript
-unsafeWindow.PardusOptions.constructor.version();
+PardusOptions.version();
 ```
 ##### addTab
 Creates a new tab and returns an object allowing manipulation of the content of the tab. Recommended usage is one tab per script.
 ```javascript
-unsafeWindow.PardusOptions.addTab({
+PardusOptions.addTab({
     id,
     heading,
     saveFunction = PardusOptionsUtility.defaultSaveFunction,
@@ -97,40 +84,14 @@ unsafeWindow.PardusOptions.addTab({
 ```
 **id** [*Required*]: An identification string with no spaces that must be unique across all scripts using this library.  
 **heading** [*Required*]: The heading of the tab. You should ensure this string is not too long to break the formatting.  
-**saveFunction** [*Optional*]: A reference to a function that can save a persistent value for you. It is highly recommended to put a value of `GM_setValue` here.  
-**getFunction** [*Optional*]: A reference to a function that can retrieve a persistent value for you. It is highly recommended to put a value of `GM_getValue` here.  
+**saveFunction** [*Optional*]: A reference to a function that can save a persistent value for you. This is automatically set to the script's `GM_setValue` method.  
+**getFunction** [*Optional*]: A reference to a function that can retrieve a persistent value for you. This is automatically set to the script's `GM_getValue` method.  
 
 Returns an object of type OptionsContent, allowing manipulation of the content within the tab's content area.
 
 Example:
 ```javascript
-const myTab = unsafeWindow.PardusOptions.addTab({
-    id: 'my-scripts-tab',
-    heading: 'My Script',
-    saveFunction: GM_setValue,
-    getFunction: GM_getValue,
-});
-```
-##### addOrGetTab
-Returns an existing tab with the same `id`, or creates a new tab if it does not exist. This is to support sharing tabs across scripts in a safer manner, as the execution order of scripts is not guaranteed.
-```javascript
-unsafeWindow.PardusOptions.addOrGetTab({
-    id,
-    heading,
-    saveFunction = PardusOptionsUtility.defaultSaveFunction,
-    getFunction = PardusOptionsUtility.defaultGetFunction,
-});
-```
-**id** [*Required*]: An identification string with no spaces that must be unique across all scripts using this library.  
-**heading** [*Required*]: The heading of the tab. You should ensure this string is not too long to break the formatting.  
-**saveFunction** [*Optional*]: A reference to a function that can save a persistent value for you. It is highly recommended to put a value of `GM_setValue` here unless you are sharing the tab across multiple scripts.  
-**getFunction** [*Optional*]: A reference to a function that can retrieve a persistent value for you. It is highly recommended to put a value of `GM_getValue` here unless you are sharing the tab across multiple scripts.  
-
-Returns an object of type OptionsContent, allowing manipulation of the content within the tab's content area.
-
-Example:
-```javascript
-const myTab = unsafeWindow.PardusOptions.addOrGetTab({
+const myTab = PardusOptions.addTab({
     id: 'my-scripts-tab',
     heading: 'My Script',
     saveFunction: GM_setValue,
@@ -141,7 +102,7 @@ const myTab = unsafeWindow.PardusOptions.addOrGetTab({
 ### Class OptionsContent
 Represents all the content within a single tab, allowing for easy creation of OptionsBoxes.
 #### Creation
-You should use the `unsafeWindow.PardusOptions.addTab()` method to obtain an OptionsContent object, and as such the constructor is not documented here.
+You should use the `PardusOptions.addTab()` method to obtain an OptionsContent object, and as such the constructor is not documented here.
 #### Methods
 
 ##### addBox
