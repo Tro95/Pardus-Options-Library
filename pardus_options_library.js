@@ -1,5 +1,3 @@
-/* global GM_setValue, GM_getValue */
-
 class PardusOptionsUtility {
     static defaultSaveFunction(key, value) {
         return GM_setValue(key, value);
@@ -975,7 +973,7 @@ class OptionsContent extends HtmlElement {
         if (this.content !== null) {
             return this.content;
         }
-        return `<table hidden class="tabstyle" id="${this.id}" style="background:url(${PardusOptionsUtility.getImagePackUrl()}bgdark.gif)"><tbody><tr><td><div align="center"><h1>${this.heading}</h1></div><table width="100%" align="center"><tbody><tr><td id="${this.id}-top" colspan="3" valign="top">${this.topBoxes.join('<br><br>')}</td></tr><tr><td id="${this.id}-left" width="350" valign="top">${this.leftBoxes.join('<br><br>')}</td><td width="40"></td><td id="${this.id}-right" width="350" valign="top">${this.rightBoxes.join('<br><br>')}</td></tr></tbody></table></td></tr></tbody></table`;
+        return `<table hidden class="tabstyle" id="${this.id}" style="background:url(${PardusOptionsUtility.getImagePackUrl()}bgdark.gif)"><tbody><tr><td><div align="center"><h1>${this.heading}</h1></div><table width="100%" align="center"><tbody><tr><td id="${this.id}-top" colspan="3" valign="top">${this.topBoxes.join('<br><br>')}</td></tr><tr><td id="${this.id}-left" width="350" valign="top">${this.leftBoxes.join('<br><br>')}</td><td width="40"></td><td id="${this.id}-right" width="350" valign="top">${this.rightBoxes.join('<br><br>')}</td></tr></tbody></table></td></tr><tr><td align="right" style="font-size:11px;color:#696988;padding-right:7px">Version ${GM_info.script.version}</td></tr></tbody></table`;
     }
 
     setActive() {
