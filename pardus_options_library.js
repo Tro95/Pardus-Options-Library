@@ -92,6 +92,30 @@ class HtmlElement {
         this.afterRefreshElement();
     }
 
+    getOffsetTop() {
+        let currentOffset = this.getElement().offsetTop + this.getElement().offsetHeight;
+        let parent = this.getElement().offsetParent;
+
+        while (parent !== null) {
+            currentOffset += parent.offsetTop;
+            parent = parent.offsetParent;
+        }
+
+        return currentOffset;
+    }
+
+    getOffsetLeft() {
+        let currentOffset = this.getElement().offsetLeft;
+        let parent = this.getElement().offsetParent;
+
+        while (parent !== null) {
+            currentOffset += parent.offsetLeft;
+            parent = parent.offsetParent;
+        }
+
+        return currentOffset;
+    }
+
     getElement() {
         return document.getElementById(this.id);
     }
@@ -108,6 +132,110 @@ class HtmlElement {
 
     appendTableChild(ele) {
         return document.getElementById(this.id).firstChild.appendChild(ele);
+    }
+}
+
+class TipBox extends HtmlElement {
+    constructor({
+        id,
+    }) {
+        super(id);
+        this.contents = '';
+        this.title = '';
+        this.addEventListener('click', () => {
+            this.hide();
+        });
+    }
+
+    setContents({
+        contents = '',
+        title = '',
+    }) {
+        this.contents = contents;
+        this.title = title;
+        this.refreshElement();
+    }
+
+    setPosition({
+        element,
+        position = 'right',
+    }) {
+        let xOffset = 15;
+        let yOffset = -13;
+
+        switch (position) {
+            case 'left': {
+                xOffset += -220;
+                break;
+            }
+
+            case 'er': {
+                xOffset += 128;
+                break;
+            }
+
+            case 'lf': {
+                xOffset += -160;
+                yOffset += -310;
+                break;
+            }
+
+            default: {
+                break;
+            }
+        }
+
+        this.getElement().style.top = `${element.getOffsetTop() + yOffset}px`;
+        this.getElement().style.left = `${element.getOffsetLeft() + xOffset}px`;
+    }
+
+    show() {
+        this.getElement().removeAttribute('hidden');
+    }
+
+    hide() {
+        this.getElement().setAttribute('hidden', '');
+    }
+
+    toString() {
+        return `<div id="${this.id}" hidden="" style="position: absolute; width: 200px; z-index: 100; border: 1pt black solid; background: #000000; padding: 0px;"><table class="messagestyle" style="background:url(${PardusOptionsUtility.getImagePackUrl()}bgd.gif)" width="100%" cellspacing="0" cellpadding="3"><tbody><tr><td style="text-align:left;background:#000000;"><b>${this.title}</b></td></tr><tr><td style="text-align:left;">${this.contents}</td></tr><tr><td height="5"><spacer type="block" width="1" height="1"></spacer></td></tr><tr><td style="text-align:right;background:#31313A;"><b>GNN Library</b><img src="${PardusOptionsUtility.getImagePackUrl()}info.gif" width="10" height="12" border="0"></td></tr></tbody></table></div>`;
+    }
+}
+
+class InfoElement extends HtmlElement {
+    constructor({
+        id,
+        description,
+        title,
+        tipBoxPosition = 'right',
+    }) {
+        super(id);
+        this.description = description;
+        this.title = title;
+        this.tipBoxPosition = tipBoxPosition;
+
+        this.addEventListener('mouseover', () => {
+            this.tipBox = PardusOptions.getDefaultTipBox();
+            this.tipBox.setContents({
+                title: this.title,
+                contents: this.description,
+            });
+
+            this.tipBox.setPosition({
+                element: this,
+                position: this.tipBoxPosition,
+            });
+
+            this.tipBox.show();
+        });
+
+        this.addEventListener('mouseout', () => {
+            this.tipBox.hide();
+        });
+    }
+
+    toString() {
+        return `<a id="${this.id}" href="#" onclick="return false;"><img src="${PardusOptionsUtility.getImagePackUrl()}info.gif" class="infoButton" alt=""></a>`;
     }
 }
 
@@ -199,26 +327,42 @@ class AbstractOption extends HtmlElement {
         getFunction = PardusOptionsUtility.defaultGetFunction,
         shallow = false,
         reverse = false,
+        info = null,
     }) {
         super(id);
         this.variable = variable;
         this.saveFunction = saveFunction;
         this.getFunction = getFunction;
         this.description = description;
+        this.info = info;
         this.defaultValue = defaultValue;
         this.inputId = `${this.id}-input`;
         this.shallow = shallow;
         this.reverse = reverse;
+
+        if (this.info !== null) {
+            this.infoElement = new InfoElement({
+                id: `${this.id}-info`,
+                description: this.info.description,
+                title: this.info.title,
+            });
+
+            this.addAfterRefreshHook(() => {
+                this.infoElement.afterRefreshElement();
+            });
+        } else {
+            this.infoElement = '';
+        }
     }
 
     toString() {
         if (this.shallow) {
-            return `<td id='${this.id}'>${this.getInnerHTML()}<label>${this.description}</label></td>`;
+            return `<td id='${this.id}'>${this.getInnerHTML()}<label>${this.description}</label>${this.infoElement}</td>`;
         }
         if (this.reverse) {
-            return `<tr id='${this.id}'><td>${this.getInnerHTML()}</td><td><label for='${this.inputId}'>${this.description}</label></td></tr>`;
+            return `<tr id='${this.id}'><td>${this.getInnerHTML()}</td><td><label for='${this.inputId}'>${this.description}</label>${this.infoElement}</td></tr>`;
         }
-        return `<tr id='${this.id}'><td><label for='${this.inputId}'>${this.description}:</label></td><td>${this.getInnerHTML()}</td></tr>`;
+        return `<tr id='${this.id}'><td><label for='${this.inputId}'>${this.description}:</label>${this.infoElement}</td><td>${this.getInnerHTML()}</td></tr>`;
     }
 
     getInnerHTML() {
@@ -267,6 +411,7 @@ class NumericOption extends AbstractOption {
         min = 0,
         max = 0,
         step = 1,
+        info = null,
     }) {
         super({
             id,
@@ -275,6 +420,7 @@ class NumericOption extends AbstractOption {
             defaultValue,
             saveFunction,
             getFunction,
+            info,
         });
         this.minValue = min;
         this.maxValue = max;
@@ -298,6 +444,7 @@ class SelectOption extends AbstractOption {
         defaultValue = null,
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
+        info = null,
         options = [],
     }) {
         super({
@@ -307,6 +454,7 @@ class SelectOption extends AbstractOption {
             defaultValue,
             saveFunction,
             getFunction,
+            info,
         });
         this.options = options;
     }
@@ -541,6 +689,7 @@ class OptionsGroup extends HtmlElement {
         defaultValue = false,
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
+        info = null,
     }) {
         const newOption = new BooleanOption({
             id: `${this.id}-option-${this.options.length}`,
@@ -549,6 +698,7 @@ class OptionsGroup extends HtmlElement {
             defaultValue,
             saveFunction,
             getFunction,
+            info,
         });
         this.options.push(newOption);
         return newOption;
@@ -563,6 +713,7 @@ class OptionsGroup extends HtmlElement {
         step = 1,
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
+        info = null,
     }) {
         const newOption = new NumericOption({
             id: `${this.id}-option-${this.options.length}`,
@@ -574,6 +725,7 @@ class OptionsGroup extends HtmlElement {
             step,
             saveFunction,
             getFunction,
+            info,
         });
         this.options.push(newOption);
         return newOption;
@@ -586,6 +738,7 @@ class OptionsGroup extends HtmlElement {
         options = [],
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
+        info = null,
     }) {
         const newOption = new SelectOption({
             id: `${this.id}-option-${this.options.length}`,
@@ -595,6 +748,7 @@ class OptionsGroup extends HtmlElement {
             options,
             saveFunction,
             getFunction,
+            info,
         });
         this.options.push(newOption);
         return newOption;
@@ -704,6 +858,7 @@ class OptionsBox extends HtmlElement {
         defaultValue = false,
         customSaveFunction = this.saveFunction,
         customGetFunction = this.getFunction,
+        info = null,
         refresh = this.refresh,
     }) {
         const booleanOptions = {
@@ -712,6 +867,7 @@ class OptionsBox extends HtmlElement {
             defaultValue,
             customSaveFunction,
             customGetFunction,
+            info,
         };
         const newOption = this.optionsGroup.addBooleanOption(booleanOptions);
         if (refresh) {
@@ -729,6 +885,7 @@ class OptionsBox extends HtmlElement {
         step = 1,
         customSaveFunction = this.saveFunction,
         customGetFunction = this.getFunction,
+        info = null,
         refresh = this.refresh,
     }) {
         const numericOptions = {
@@ -740,6 +897,7 @@ class OptionsBox extends HtmlElement {
             step,
             customSaveFunction,
             customGetFunction,
+            info,
         };
         const newOption = this.optionsGroup.addNumericOption(numericOptions);
         if (refresh) {
@@ -755,6 +913,7 @@ class OptionsBox extends HtmlElement {
         options = [],
         customSaveFunction = this.saveFunction,
         customGetFunction = this.getFunction,
+        info = null,
         refresh = this.refresh,
     }) {
         const selectOptions = {
@@ -764,6 +923,7 @@ class OptionsBox extends HtmlElement {
             options,
             customSaveFunction,
             customGetFunction,
+            info,
         };
         const newOption = this.optionsGroup.addSelectOption(selectOptions);
         if (refresh) {
@@ -1218,6 +1378,9 @@ class PardusOptions {
         // Add this object to the DOM within the main containing element
         pardusMainElement.appendChild(this.getPardusOptionsElement());
 
+        const defaultTipBox = this.createDefaultTipBox();
+        pardusMainElement.appendChild(defaultTipBox.toElement());
+
         // Add the Pardus options back in
         this.addTab({
             id: 'pardus-default',
@@ -1231,6 +1394,18 @@ class PardusOptions {
 
     static version() {
         return 1.6;
+    }
+
+    static createDefaultTipBox() {
+        return new TipBox({
+            id: 'options-default-tip-box',
+        });
+    }
+
+    static getDefaultTipBox() {
+        const defaultTipBox = this.createDefaultTipBox();
+        defaultTipBox.refreshElement();
+        return defaultTipBox;
     }
 
     static getTabsElement() {
