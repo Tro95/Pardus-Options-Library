@@ -57,7 +57,10 @@ class HtmlElement {
     }
 
     addEventListener(eventName, listener) {
-        this.getElement().addEventListener(eventName, listener, false);
+        if (this.getElement()) {
+            this.getElement().addEventListener(eventName, listener, false);
+        }
+
         this.addAfterRefreshHook(() => {
             this.getElement().addEventListener(eventName, listener, false);
         });
@@ -73,9 +76,9 @@ class HtmlElement {
         }
     }
 
-    afterRefreshElement() {
+    afterRefreshElement(opts = {}) {
         for (const func of this.afterRefreshHooks) {
-            func();
+            func(opts);
         }
     }
 
@@ -631,12 +634,14 @@ class OptionsBox extends HtmlElement {
         imageRight = '',
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
+        refresh = true,
     }) {
         super(id);
         this.heading = heading;
         this.premium = premium;
         this.saveFunction = saveFunction;
         this.getFunction = getFunction;
+        this.refresh = refresh;
 
         const headerHtml = (premium) ? '<th class="premium">' : '<th>';
         this.frontContainer = `<form id="${this.id}" action="none"><table style="background:url(${PardusOptionsUtility.getImagePackUrl()}bgd.gif)" width="100%" cellpadding="3" align="center"><tbody><tr>${headerHtml}${heading}</th></tr>`;
@@ -657,6 +662,12 @@ class OptionsBox extends HtmlElement {
         this.saveButtonRow = new SaveButtonRow({
             id: `${this.id}-save`,
             premium,
+        });
+        this.addAfterRefreshHook((opts) => {
+            if (opts.maintainRefreshStatus) {
+                return;
+            }
+            this.refresh = true;
         });
         this.addAfterRefreshHook(() => {
             this.optionsGroup.afterRefreshElement();
@@ -693,6 +704,7 @@ class OptionsBox extends HtmlElement {
         defaultValue = false,
         customSaveFunction = this.saveFunction,
         customGetFunction = this.getFunction,
+        refresh = this.refresh,
     }) {
         const booleanOptions = {
             variable,
@@ -702,7 +714,9 @@ class OptionsBox extends HtmlElement {
             customGetFunction,
         };
         const newOption = this.optionsGroup.addBooleanOption(booleanOptions);
-        this.refreshElement();
+        if (refresh) {
+            this.refreshElement();
+        }
         return newOption;
     }
 
@@ -715,6 +729,7 @@ class OptionsBox extends HtmlElement {
         step = 1,
         customSaveFunction = this.saveFunction,
         customGetFunction = this.getFunction,
+        refresh = this.refresh,
     }) {
         const numericOptions = {
             variable,
@@ -727,7 +742,9 @@ class OptionsBox extends HtmlElement {
             customGetFunction,
         };
         const newOption = this.optionsGroup.addNumericOption(numericOptions);
-        this.refreshElement();
+        if (refresh) {
+            this.refreshElement();
+        }
         return newOption;
     }
 
@@ -738,6 +755,7 @@ class OptionsBox extends HtmlElement {
         options = [],
         customSaveFunction = this.saveFunction,
         customGetFunction = this.getFunction,
+        refresh = this.refresh,
     }) {
         const selectOptions = {
             variable,
@@ -748,7 +766,9 @@ class OptionsBox extends HtmlElement {
             customGetFunction,
         };
         const newOption = this.optionsGroup.addSelectOption(selectOptions);
-        this.refreshElement();
+        if (refresh) {
+            this.refreshElement();
+        }
         return newOption;
     }
 
@@ -756,6 +776,7 @@ class OptionsBox extends HtmlElement {
         description,
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
+        refresh = this.refresh,
     }) {
         const groupedOptions = {
             description,
@@ -764,7 +785,9 @@ class OptionsBox extends HtmlElement {
         };
 
         const newOption = this.optionsGroup.addGroupedOption(groupedOptions);
-        this.refreshElement();
+        if (refresh) {
+            this.refreshElement();
+        }
         return newOption;
     }
 }
@@ -776,6 +799,7 @@ class OptionsContent extends HtmlElement {
         content = null,
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
+        refresh = true,
     }) {
         super(id);
         this.heading = heading;
@@ -785,6 +809,13 @@ class OptionsContent extends HtmlElement {
         this.leftBoxes = [];
         this.rightBoxes = [];
         this.topBoxes = [];
+        this.refresh = refresh;
+        this.addAfterRefreshHook((opts) => {
+            if (opts.maintainRefreshStatus) {
+                return;
+            }
+            this.refresh = true;
+        });
         this.addAfterRefreshHook(() => {
             for (const box of this.leftBoxes) {
                 box.afterRefreshElement();
@@ -848,6 +879,7 @@ class OptionsContent extends HtmlElement {
         imageRight = '',
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
+        refresh = this.refresh,
     }) {
         const newBox = new OptionsBox({
             id: `${this.id}-top-box-${this.topBoxes.length}`,
@@ -858,9 +890,15 @@ class OptionsContent extends HtmlElement {
             imageRight,
             saveFunction,
             getFunction,
+            refresh,
         });
+
         this.topBoxes.push(newBox);
-        this.refreshElement();
+
+        if (refresh) {
+            this.refreshElement();
+        }
+
         return newBox;
     }
 
@@ -872,6 +910,7 @@ class OptionsContent extends HtmlElement {
         imageRight = '',
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
+        refresh = this.refresh,
     }) {
         const newBox = new OptionsBox({
             id: `${this.id}-left-box-${this.leftBoxes.length}`,
@@ -882,9 +921,15 @@ class OptionsContent extends HtmlElement {
             imageRight,
             saveFunction,
             getFunction,
+            refresh,
         });
+
         this.leftBoxes.push(newBox);
-        this.refreshElement();
+
+        if (refresh) {
+            this.refreshElement();
+        }
+
         return newBox;
     }
 
@@ -896,6 +941,7 @@ class OptionsContent extends HtmlElement {
         imageRight = '',
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
+        refresh = this.refresh,
     }) {
         const newBox = new OptionsBox({
             id: `${this.id}-right-box-${this.rightBoxes.length}`,
@@ -906,9 +952,15 @@ class OptionsContent extends HtmlElement {
             imageRight,
             saveFunction,
             getFunction,
+            refresh,
         });
+
         this.rightBoxes.push(newBox);
-        this.refreshElement();
+
+        if (refresh) {
+            this.refreshElement();
+        }
+
         return newBox;
     }
 
@@ -919,6 +971,7 @@ class OptionsContent extends HtmlElement {
         imageRight = '',
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
+        refresh = this.refresh,
     }) {
         return this.addBox({
             heading,
@@ -928,6 +981,7 @@ class OptionsContent extends HtmlElement {
             imageRight,
             saveFunction,
             getFunction,
+            refresh,
         });
     }
 
@@ -938,6 +992,7 @@ class OptionsContent extends HtmlElement {
         imageRight = '',
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
+        refresh = this.refresh,
     }) {
         return this.addBoxLeft({
             heading,
@@ -947,6 +1002,7 @@ class OptionsContent extends HtmlElement {
             imageRight,
             saveFunction,
             getFunction,
+            refresh,
         });
     }
 
@@ -957,6 +1013,7 @@ class OptionsContent extends HtmlElement {
         imageRight = '',
         saveFunction = this.saveFunction,
         getFunction = this.getFunction,
+        refresh = this.refresh,
     }) {
         return this.addBoxRight({
             heading,
@@ -966,6 +1023,7 @@ class OptionsContent extends HtmlElement {
             imageRight,
             saveFunction,
             getFunction,
+            refresh,
         });
     }
 
@@ -1024,6 +1082,7 @@ class Tab {
         content = null,
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
+        refresh = true,
     }) {
         this.id = id;
         this.heading = heading;
@@ -1033,6 +1092,7 @@ class Tab {
             content,
             saveFunction,
             getFunction,
+            refresh,
         });
         this.label = new TabLabel({
             id: `${this.id}-label`,
@@ -1128,7 +1188,9 @@ class ContentsArea extends HtmlElement {
         content,
     }) {
         this.appendChild(document.createElement('div').appendChild(content.toElement()));
-        content.afterRefreshElement();
+        content.afterRefreshElement({
+            maintainRefreshStatus: true,
+        });
     }
 
     toString() {
@@ -1195,6 +1257,7 @@ class PardusOptions {
         content = null,
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
+        refresh = true,
     }) {
         const newTab = new Tab({
             id,
@@ -1202,6 +1265,7 @@ class PardusOptions {
             content,
             saveFunction,
             getFunction,
+            refresh,
         });
 
         // Check for id uniqueness
