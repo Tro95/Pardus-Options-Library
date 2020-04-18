@@ -36,6 +36,10 @@ class PardusOptionsUtility {
         window.localStorage.setItem('pardusOptionsOpenTab', id);
         window.dispatchEvent(new window.Event('storage'));
     }
+
+    static getImagePackUrl() {
+        return String(document.querySelector('body').style.backgroundImage).replace(/url\("*|"*\)|[a-z0-9]+\.gif/g, '');
+    }
 }
 
 class HtmlElement {
@@ -637,7 +641,7 @@ class OptionsBox extends HtmlElement {
         this.getFunction = getFunction;
 
         const headerHtml = (premium) ? '<th class="premium">' : '<th>';
-        this.frontContainer = `<form id="${this.id}" action="none"><table style="background:url(//static.pardus.at/img/std/bgd.gif)" width="100%" cellpadding="3" align="center"><tbody><tr>${headerHtml}${heading}</th></tr>`;
+        this.frontContainer = `<form id="${this.id}" action="none"><table style="background:url(${PardusOptionsUtility.getImagePackUrl()}bgd.gif)" width="100%" cellpadding="3" align="center"><tbody><tr>${headerHtml}${heading}</th></tr>`;
         this.backContainer = '</tbody></table></form>';
         this.innerHtml = '';
         this.description = new DescriptionElement({
@@ -971,7 +975,7 @@ class OptionsContent extends HtmlElement {
         if (this.content !== null) {
             return this.content;
         }
-        return `<table hidden class="messagestyle" id="${this.id}" style="background:url(//static.pardus.at/img/std/bgdark.gif)"><tbody><tr><td><div align="center"><h1>${this.heading}</h1></div><table width="100%" align="center"><tbody><tr><td id="${this.id}-top" colspan="3" valign="top">${this.topBoxes.join('<br><br>')}</td></tr><tr><td id="${this.id}-left" width="350" valign="top">${this.leftBoxes.join('<br><br>')}</td><td width="40"></td><td id="${this.id}-right" width="350" valign="top">${this.rightBoxes.join('<br><br>')}</td></tr></tbody></table></td></tr></tbody></table`;
+        return `<table hidden class="tabstyle" id="${this.id}" style="background:url(${PardusOptionsUtility.getImagePackUrl()}bgdark.gif)"><tbody><tr><td><div align="center"><h1>${this.heading}</h1></div><table width="100%" align="center"><tbody><tr><td id="${this.id}-top" colspan="3" valign="top">${this.topBoxes.join('<br><br>')}</td></tr><tr><td id="${this.id}-left" width="350" valign="top">${this.leftBoxes.join('<br><br>')}</td><td width="40"></td><td id="${this.id}-right" width="350" valign="top">${this.rightBoxes.join('<br><br>')}</td></tr></tbody></table></td></tr></tbody></table`;
     }
 
     setActive() {
@@ -995,22 +999,22 @@ class TabLabel extends HtmlElement {
 
     toString() {
         if (this.active) {
-            return `<td id="${this.id}" style="background: transparent url(&quot;//static.pardus.at/img/std/tabactive.png&quot;) repeat scroll 0% 0%; cursor: default;" onmouseover="this.style.cursor='default'" class="tabcontent">${this.heading}</td>`;
+            return `<td id="${this.id}" style="background: transparent url(&quot;${PardusOptionsUtility.getImagePackUrl()}tabactive.png&quot;) repeat scroll 0% 0%; cursor: default;" onmouseover="this.style.cursor='default'" class="tabcontent">${this.heading}</td>`;
         }
-        return `<td id="${this.id}" style="background: transparent url(&quot;//static.pardus.at/img/std/tab.png&quot;) repeat scroll 0% 0%; cursor: default;" onmouseover="this.style.background='url(//static.pardus.at/img/std/tabactive.png)';this.style.cursor='default'" onmouseout="this.style.background='url(//static.pardus.at/img/std/tab.png)'" class="tabcontent">${this.heading}</td>`;
+        return `<td id="${this.id}" style="background: transparent url(&quot;${PardusOptionsUtility.getImagePackUrl()}tab.png&quot;) repeat scroll 0% 0%; cursor: default;" onmouseover="this.style.background='url(${PardusOptionsUtility.getImagePackUrl()}tabactive.png)';this.style.cursor='default'" onmouseout="this.style.background='url(${PardusOptionsUtility.getImagePackUrl()}tab.png)'" class="tabcontent">${this.heading}</td>`;
     }
 
     setActive() {
-        this.getElement().setAttribute('style', "background: transparent url('//static.pardus.at/img/std/tabactive.png') repeat scroll 0% 0%; cursor: default;");
+        this.getElement().setAttribute('style', `background: transparent url('${PardusOptionsUtility.getImagePackUrl()}tabactive.png') repeat scroll 0% 0%; cursor: default;`);
         this.getElement().setAttribute('onmouseover', "this.style.cursor='default'");
         this.getElement().removeAttribute('onmouseout');
         this.active = true;
     }
 
     setInactive() {
-        this.getElement().setAttribute('style', "background: transparent url('//static.pardus.at/img/std/tab.png') repeat scroll 0% 0%; cursor: default;");
-        this.getElement().setAttribute('onmouseover', "this.style.background='url(//static.pardus.at/img/std/tabactive.png)';this.style.cursor='default'");
-        this.getElement().setAttribute('onmouseout', "this.style.background='url(//static.pardus.at/img/std/tab.png)'");
+        this.getElement().setAttribute('style', `background: transparent url('${PardusOptionsUtility.getImagePackUrl()}tab.png') repeat scroll 0% 0%; cursor: default;`);
+        this.getElement().setAttribute('onmouseover', `this.style.background='url(${PardusOptionsUtility.getImagePackUrl()}tabactive.png)';this.style.cursor='default'`);
+        this.getElement().setAttribute('onmouseout', `this.style.background='url(${PardusOptionsUtility.getImagePackUrl()}tab.png)'`);
         this.active = false;
     }
 }
@@ -1088,7 +1092,7 @@ class TabsRow extends HtmlElement {
     }
 
     toString() {
-        return `<tr id="${this.id}"></tr>`;
+        return `<tr id="${this.id}" cellspacing="0" cellpadding="0" border="0"></tr>`;
     }
 }
 
@@ -1130,7 +1134,7 @@ class ContentsArea extends HtmlElement {
     }
 
     toString() {
-        return `<tr id="${this.id}"></tr>`;
+        return `<tr id="${this.id}" cellspacing="0" cellpadding="0" border="0"></tr>`;
     }
 }
 
@@ -1148,6 +1152,7 @@ class PardusOptions {
 
         // Give the Pardus options an appropriate id, and remove it from the DOM
         defaultPardusOptionsContent.setAttribute('id', 'options-content-pardus-default');
+        defaultPardusOptionsContent.setAttribute('class', 'tabstyle');
         defaultPardusOptionsContent.remove();
 
         // Add this object to the DOM within the main containing element
@@ -1182,7 +1187,7 @@ class PardusOptions {
 
     static getPardusOptionsElement() {
         const template = document.createElement('template');
-        template.innerHTML = `<table id="options-area"><tbody><tr><td>${this.getTabsElement()}</td></tr>${this.getContentElement()}</tbody></table>`;
+        template.innerHTML = `<table id="options-area" cellspacing="0" cellpadding="0" border="0"><tbody><tr><td>${this.getTabsElement()}</td></tr>${this.getContentElement()}</tbody></table>`;
         return template.content.firstChild;
     }
 
