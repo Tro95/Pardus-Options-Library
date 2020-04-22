@@ -62,7 +62,9 @@ class HtmlElement {
         }
 
         this.addAfterRefreshHook(() => {
-            this.getElement().addEventListener(eventName, listener, false);
+            if (this.getElement()) {
+                this.getElement().addEventListener(eventName, listener, false);
+            }
         });
     }
 
@@ -1192,7 +1194,7 @@ class OptionsContent extends HtmlElement {
             return this.content;
         }
         const hidden = this.active ? '' : 'hidden';
-        return `<tr id="${this.id}" ${hidden}><td><table width="100%" align="center"><tbody><tr><td id="${this.id}-top" colspan="3" valign="top">${this.topBoxes.join('<br><br>')}</td></tr><tr><td id="${this.id}-left" width="350" valign="top">${this.leftBoxes.join('<br><br>')}</td><td width="40"></td><td id="${this.id}-right" width="350" valign="top">${this.rightBoxes.join('<br><br>')}</td></tr></tbody></table></td></tr>`;
+        return `<tr id="${this.id}" ${hidden}><td><table width="100%" align="center"><tbody><tr><td id="${this.id}-top" colspan="3" valign="top">${this.topBoxes.join('<br><br>')}${(this.topBoxes.length > 0) ? '<br><br>' : ''}</td></tr><tr><td id="${this.id}-left" width="350" valign="top">${this.leftBoxes.join('<br><br>')}</td><td width="40"></td><td id="${this.id}-right" width="350" valign="top">${this.rightBoxes.join('<br><br>')}</td></tr></tbody></table></td></tr>`;
     }
 
     setActive() {
@@ -1211,30 +1213,40 @@ class TabLabel extends HtmlElement {
         id,
         heading,
         active = false,
+        padding = '0px',
     }) {
         super(id);
+        this.padding = padding;
         this.heading = heading;
         this.active = active;
+        this.addEventListener('mouseover', () => {
+            if (this.active) {
+                this.getElement().style.cursor = 'default';
+            } else {
+                this.getElement().style.backgroundImage = `url(${PardusOptionsUtility.getImagePackUrl()}tabactive.png)`;
+                this.getElement().style.cursor = 'default';
+            }
+        });
+        this.addEventListener('mouseout', () => {
+            if (!this.active) {
+                this.getElement().style.backgroundImage = `url(${PardusOptionsUtility.getImagePackUrl()}tab.png)`;
+                this.getElement().style.cursor = 'default';
+            }
+        });
     }
 
     toString() {
-        if (this.active) {
-            return `<td id="${this.id}" style="background: transparent url(&quot;${PardusOptionsUtility.getImagePackUrl()}tabactive.png&quot;) repeat scroll 0% 0%; cursor: default;" onmouseover="this.style.cursor='default'" class="tabcontent">${this.heading}</td>`;
-        }
-        return `<td id="${this.id}" style="background: transparent url(&quot;${PardusOptionsUtility.getImagePackUrl()}tab.png&quot;) repeat scroll 0% 0%; cursor: default;" onmouseover="this.style.background='url(${PardusOptionsUtility.getImagePackUrl()}tabactive.png)';this.style.cursor='default'" onmouseout="this.style.background='url(${PardusOptionsUtility.getImagePackUrl()}tab.png)'" class="tabcontent">${this.heading}</td>`;
+        const imageUrl = (this.active) ? 'tabactive' : 'tab';
+        return `<td id="${this.id}" style="background: transparent url(&quot;${PardusOptionsUtility.getImagePackUrl()}${imageUrl}.png&quot;) no-repeat scroll 0% 0%; background-size: cover; cursor: default; padding-left: ${this.padding}; padding-right: ${this.padding}" class="tabcontent">${this.heading}</td>`;
     }
 
     setActive() {
-        this.getElement().setAttribute('style', `background: transparent url('${PardusOptionsUtility.getImagePackUrl()}tabactive.png') repeat scroll 0% 0%; cursor: default;`);
-        this.getElement().setAttribute('onmouseover', "this.style.cursor='default'");
-        this.getElement().removeAttribute('onmouseout');
+        this.getElement().style.backgroundImage = `url('${PardusOptionsUtility.getImagePackUrl()}tabactive.png')`;
         this.active = true;
     }
 
     setInactive() {
-        this.getElement().setAttribute('style', `background: transparent url('${PardusOptionsUtility.getImagePackUrl()}tab.png') repeat scroll 0% 0%; cursor: default;`);
-        this.getElement().setAttribute('onmouseover', `this.style.background='url(${PardusOptionsUtility.getImagePackUrl()}tabactive.png)';this.style.cursor='default'`);
-        this.getElement().setAttribute('onmouseout', `this.style.background='url(${PardusOptionsUtility.getImagePackUrl()}tab.png)'`);
+        this.getElement().style.backgroundImage = `url('${PardusOptionsUtility.getImagePackUrl()}tab.png')`;
         this.active = false;
     }
 }
@@ -1247,6 +1259,7 @@ class SubTab {
         getFunction = PardusOptionsUtility.defaultGetFunction,
         refresh = true,
         active = false,
+        padding,
     }) {
         this.id = id;
         this.active = active;
@@ -1254,6 +1267,7 @@ class SubTab {
             id: `${this.id}-label`,
             heading: label,
             active: this.active,
+            padding,
         });
         this.content = new OptionsContent({
             id: `${this.id}-content`,
@@ -1300,6 +1314,18 @@ class SubTab {
     }
 }
 
+class VersionRow extends HtmlElement {
+    constructor({
+        id,
+    }) {
+        super(id);
+    }
+
+    toString() {
+        return `<tr id="${this.id}"><td align="right" style="font-size:11px;color:#696988;padding-right:7px;padding-top:5px">Version ${GM_info.script.version}</td></tr>`;
+    }
+}
+
 class TabContent extends HtmlElement {
     constructor({
         id,
@@ -1327,6 +1353,9 @@ class TabContent extends HtmlElement {
             refresh: this.refresh,
             active: true,
         });
+        this.versionRow = new VersionRow({
+            id: `${this.id}-versionrow`,
+        });
         this.addAfterRefreshHook((opts) => {
             if (opts.maintainRefreshStatus) {
                 return;
@@ -1349,6 +1378,7 @@ class TabContent extends HtmlElement {
         getFunction = this.getFunction,
         refresh = this.refresh,
         active = false,
+        padding,
     }) {
         const newSubTab = new SubTab({
             id: `${this.id}-subtab-${this.subTabs.length}`,
@@ -1357,6 +1387,7 @@ class TabContent extends HtmlElement {
             getFunction,
             refresh,
             active,
+            padding,
         });
 
         const newSubTabContent = newSubTab.getContent();
@@ -1427,7 +1458,7 @@ class TabContent extends HtmlElement {
         }
         const hidden = (this.subTabs.length > 1) ? '' : 'hidden';
         const innerStyle = (this.subTabs.length > 1) ? 'class="tabstyle"' : '';
-        return `<table id="${this.id}" hidden class="tabstyle" style="background:url(${PardusOptionsUtility.getImagePackUrl()}bgdark.gif)" cellspacing="0" cellpadding="0" border="0"><tbody><tr><td><div align="center"><h1>${this.heading}</h1></div></td></tr><tr><td><table width="100%" align="center" cellspacing="0" cellpadding="0" border="0"><tbody><tr><td><table cellspacing="0" cellpadding="0" border="0" ${hidden}><tbody>${this.subTabsRow}</tbody></table></td></tr><tr><td><table ${innerStyle} cellspacing="0" cellpadding="0" border="0"><tbody>${this.subTabs.join('')}</tbody></table></td></tr></tbody></table></td></tr><tr><td align="right" style="font-size:11px;color:#696988;padding-right:7px;padding-top:5px">Version ${GM_info.script.version}</td></tr></tbody></table>`;
+        return `<table id="${this.id}" hidden class="tabstyle" style="background:url(${PardusOptionsUtility.getImagePackUrl()}bgdark.gif)" cellspacing="0" cellpadding="0" border="0"><tbody><tr><td><div align="center"><h1>${this.heading}</h1></div></td></tr><tr><td><table width="100%" align="center" cellspacing="0" cellpadding="0" border="0"><tbody><tr><td><table cellspacing="0" cellpadding="0" border="0" ${hidden}><tbody>${this.subTabsRow}</tbody></table></td></tr><tr><td><table ${innerStyle} cellspacing="0" cellpadding="0" border="0"><tbody>${this.subTabs.join('')}</tbody></table></td></tr></tbody></table></td></tr>${this.versionRow}</tbody></table>`;
     }
 }
 
@@ -1439,6 +1470,7 @@ class Tab {
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
         refresh = true,
+        defaultLabel,
     }) {
         this.id = id;
         this.heading = heading;
@@ -1449,6 +1481,7 @@ class Tab {
             saveFunction,
             getFunction,
             refresh,
+            defaultLabel,
         });
         this.label = new TabLabel({
             id: `${this.id}-label`,
@@ -1654,6 +1687,7 @@ class PardusOptions {
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
         refresh = true,
+        defaultLabel,
     }) {
         const newTab = new Tab({
             id,
@@ -1662,6 +1696,7 @@ class PardusOptions {
             saveFunction,
             getFunction,
             refresh,
+            defaultLabel,
         });
 
         // Check for id uniqueness
