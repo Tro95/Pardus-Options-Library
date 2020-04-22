@@ -955,14 +955,13 @@ class OptionsBox extends HtmlElement {
 class OptionsContent extends HtmlElement {
     constructor({
         id,
-        heading,
         content = null,
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
         refresh = true,
+        active = true,
     }) {
         super(id);
-        this.heading = heading;
         this.content = content;
         this.saveFunction = saveFunction;
         this.getFunction = getFunction;
@@ -970,6 +969,7 @@ class OptionsContent extends HtmlElement {
         this.rightBoxes = [];
         this.topBoxes = [];
         this.refresh = refresh;
+        this.active = active;
         this.addAfterRefreshHook((opts) => {
             if (opts.maintainRefreshStatus) {
                 return;
@@ -1191,14 +1191,17 @@ class OptionsContent extends HtmlElement {
         if (this.content !== null) {
             return this.content;
         }
-        return `<table hidden class="tabstyle" id="${this.id}" style="background:url(${PardusOptionsUtility.getImagePackUrl()}bgdark.gif)"><tbody><tr><td><div align="center"><h1>${this.heading}</h1></div><table width="100%" align="center"><tbody><tr><td id="${this.id}-top" colspan="3" valign="top">${this.topBoxes.join('<br><br>')}</td></tr><tr><td id="${this.id}-left" width="350" valign="top">${this.leftBoxes.join('<br><br>')}</td><td width="40"></td><td id="${this.id}-right" width="350" valign="top">${this.rightBoxes.join('<br><br>')}</td></tr></tbody></table></td></tr><tr><td align="right" style="font-size:11px;color:#696988;padding-right:7px">Version ${GM_info.script.version}</td></tr></tbody></table`;
+        const hidden = this.active ? '' : 'hidden';
+        return `<tr id="${this.id}" ${hidden}><td><table width="100%" align="center"><tbody><tr><td id="${this.id}-top" colspan="3" valign="top">${this.topBoxes.join('<br><br>')}</td></tr><tr><td id="${this.id}-left" width="350" valign="top">${this.leftBoxes.join('<br><br>')}</td><td width="40"></td><td id="${this.id}-right" width="350" valign="top">${this.rightBoxes.join('<br><br>')}</td></tr></tbody></table></td></tr>`;
     }
 
     setActive() {
+        this.active = true;
         this.getElement().removeAttribute('hidden');
     }
 
     setInactive() {
+        this.active = false;
         this.getElement().setAttribute('hidden', '');
     }
 }
@@ -1207,10 +1210,11 @@ class TabLabel extends HtmlElement {
     constructor({
         id,
         heading,
+        active = false,
     }) {
         super(id);
         this.heading = heading;
-        this.active = false;
+        this.active = active;
     }
 
     toString() {
@@ -1235,6 +1239,198 @@ class TabLabel extends HtmlElement {
     }
 }
 
+class SubTab {
+    constructor({
+        id,
+        label,
+        saveFunction = PardusOptionsUtility.defaultSaveFunction,
+        getFunction = PardusOptionsUtility.defaultGetFunction,
+        refresh = true,
+        active = false,
+    }) {
+        this.id = id;
+        this.active = active;
+        this.label = new TabLabel({
+            id: `${this.id}-label`,
+            heading: label,
+            active: this.active,
+        });
+        this.content = new OptionsContent({
+            id: `${this.id}-content`,
+            saveFunction,
+            getFunction,
+            refresh,
+            active: this.active,
+        });
+    }
+
+    setActive() {
+        if (this.active === true) {
+            return;
+        }
+        this.active = true;
+        this.label.setActive();
+        this.content.setActive();
+    }
+
+    setInactive() {
+        if (this.active === false) {
+            return;
+        }
+        this.active = false;
+        this.label.setInactive();
+        this.content.setInactive();
+    }
+
+    afterRefreshElement(opts) {
+        this.label.afterRefreshElement(opts);
+        this.content.afterRefreshElement(opts);
+    }
+
+    getLabel() {
+        return this.label;
+    }
+
+    getContent() {
+        return this.content;
+    }
+
+    toString() {
+        return this.content.toString();
+    }
+}
+
+class TabContent extends HtmlElement {
+    constructor({
+        id,
+        heading,
+        defaultLabel = 'Default tab',
+        content = null,
+        saveFunction = PardusOptionsUtility.defaultSaveFunction,
+        getFunction = PardusOptionsUtility.defaultGetFunction,
+        refresh = true,
+    }) {
+        super(id);
+        this.heading = heading;
+        this.content = content;
+        this.saveFunction = saveFunction;
+        this.getFunction = getFunction;
+        this.subTabsRow = new TabsRow({
+            id: `${this.id}-tabsrow`,
+        });
+        this.refresh = refresh;
+        this.subTabs = [];
+        this.defaultTab = this.addSubTab({
+            label: defaultLabel,
+            saveFunction: this.saveFunction,
+            getFunction: this.getFunction,
+            refresh: this.refresh,
+            active: true,
+        });
+        this.addAfterRefreshHook((opts) => {
+            if (opts.maintainRefreshStatus) {
+                return;
+            }
+            this.refresh = true;
+        });
+        this.addAfterRefreshHook((opts) => {
+            if (!this.refresh && opts.maintainRefreshStatus) {
+                return;
+            }
+            for (const subTab of this.subTabs) {
+                subTab.afterRefreshElement(opts);
+            }
+        });
+    }
+
+    addSubTab({
+        label,
+        saveFunction = this.saveFunction,
+        getFunction = this.getFunction,
+        refresh = this.refresh,
+        active = false,
+    }) {
+        const newSubTab = new SubTab({
+            id: `${this.id}-subtab-${this.subTabs.length}`,
+            label,
+            saveFunction,
+            getFunction,
+            refresh,
+            active,
+        });
+
+        const newSubTabContent = newSubTab.getContent();
+        const newSubTabLabel = newSubTab.getLabel();
+
+        this.subTabsRow.addLabel({
+            label: newSubTabLabel,
+        });
+
+        this.subTabs.push(newSubTab);
+
+        newSubTabLabel.addEventListener('click', () => {
+            this.setActiveSubTab(newSubTab.id);
+        });
+
+        return newSubTabContent;
+    }
+
+    setActiveSubTab(subTabId) {
+        for (const subTab of this.subTabs) {
+            if (subTab.id === subTabId) {
+                subTab.setActive();
+            } else {
+                subTab.setInactive();
+            }
+        }
+    }
+
+    addBox(args) {
+        return this.defaultTab.addBox(args);
+    }
+
+    addBoxTop(args) {
+        return this.defaultTab.addBoxTop(args);
+    }
+
+    addBoxLeft(args) {
+        return this.defaultTab.addBoxLeft(args);
+    }
+
+    addBoxRight(args) {
+        return this.defaultTab.addBoxRight(args);
+    }
+
+    addPremiumBox(args) {
+        return this.defaultTab.addPremiumBox(args);
+    }
+
+    addPremiumBoxLeft(args) {
+        return this.defaultTab.addPremiumBoxLeft(args);
+    }
+
+    addPremiumBoxRight(args) {
+        return this.defaultTab.addPremiumBoxRight(args);
+    }
+
+    setActive() {
+        this.getElement().removeAttribute('hidden');
+    }
+
+    setInactive() {
+        this.getElement().setAttribute('hidden', '');
+    }
+
+    toString() {
+        if (this.content !== null) {
+            return this.content;
+        }
+        const hidden = (this.subTabs.length > 1) ? '' : 'hidden';
+        const innerStyle = (this.subTabs.length > 1) ? 'class="tabstyle"' : '';
+        return `<table id="${this.id}" hidden class="tabstyle" style="background:url(${PardusOptionsUtility.getImagePackUrl()}bgdark.gif)" cellspacing="0" cellpadding="0" border="0"><tbody><tr><td><div align="center"><h1>${this.heading}</h1></div></td></tr><tr><td><table width="100%" align="center" cellspacing="0" cellpadding="0" border="0"><tbody><tr><td><table cellspacing="0" cellpadding="0" border="0" ${hidden}><tbody>${this.subTabsRow}</tbody></table></td></tr><tr><td><table ${innerStyle} cellspacing="0" cellpadding="0" border="0"><tbody>${this.subTabs.join('')}</tbody></table></td></tr></tbody></table></td></tr><tr><td align="right" style="font-size:11px;color:#696988;padding-right:7px;padding-top:5px">Version ${GM_info.script.version}</td></tr></tbody></table>`;
+    }
+}
+
 class Tab {
     constructor({
         id,
@@ -1246,7 +1442,7 @@ class Tab {
     }) {
         this.id = id;
         this.heading = heading;
-        this.content = new OptionsContent({
+        this.content = new TabContent({
             id: `options-content-${this.id}`,
             heading,
             content,
@@ -1264,7 +1460,7 @@ class Tab {
     }
 
     addListeners() {
-        this.getLabel().getElement().addEventListener('click', () => PardusOptionsUtility.setActiveTab(this.id), true);
+        this.getLabel().addEventListener('click', () => PardusOptionsUtility.setActiveTab(this.id), true);
         window.addEventListener('storage', () => {
             if (window.localStorage.getItem('pardusOptionsOpenTab') === this.id && !this.active) {
                 this.setActive();
@@ -1299,18 +1495,43 @@ class Tab {
 class TabsRow extends HtmlElement {
     constructor({
         id,
+        hidden = false,
     }) {
         super(id);
+        this.hidden = hidden;
+        this.labels = [];
+        this.addAfterRefreshHook(() => {
+            for (const label of this.labels) {
+                label.afterRefreshElement();
+            }
+        });
     }
 
     addLabel({
         label,
     }) {
-        this.appendChild(label.toElement());
+        this.labels.push(label);
+        if (this.getElement()) {
+            this.appendChild(label.toElement());
+            label.afterRefreshElement();
+        }
+    }
+
+    show() {
+        this.hidden = false;
+        this.refreshElement();
+    }
+
+    hide() {
+        this.hidden = true;
+        this.refreshElement();
     }
 
     toString() {
-        return `<tr id="${this.id}" cellspacing="0" cellpadding="0" border="0"></tr>`;
+        if (this.hidden) {
+            return `<tr id="${this.id}" cellspacing="0" cellpadding="0" border="0" hidden="">${this.labels.join('')}</tr>`;
+        }
+        return `<tr id="${this.id}" cellspacing="0" cellpadding="0" border="0">${this.labels.join('')}</tr>`;
     }
 }
 
@@ -1422,7 +1643,7 @@ class PardusOptions {
 
     static getPardusOptionsElement() {
         const template = document.createElement('template');
-        template.innerHTML = `<table id="options-area" cellspacing="0" cellpadding="0" border="0"><tbody><tr><td>${this.getTabsElement()}</td></tr>${this.getContentElement()}</tbody></table>`;
+        template.innerHTML = `<table id="options-area" cellspacing="0" cellpadding="0" border="0"><tbody><tr cellspacing="0" cellpadding="0" border="0"><td>${this.getTabsElement()}</td></tr>${this.getContentElement()}</tbody></table>`;
         return template.content.firstChild;
     }
 
