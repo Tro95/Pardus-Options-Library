@@ -402,6 +402,60 @@ class BooleanOption extends AbstractOption {
     }
 }
 
+class KeyDownOption extends AbstractOption {
+    constructor(args) {
+        super(args);
+        this.addAfterRefreshHook(() => {
+            document.getElementById(`${this.inputId}-setkey`).addEventListener('click', () => {
+                const captureKey = (e) => {
+                    console.log(e);
+                    this.getInputElement().value = JSON.stringify({
+                        code: e.keyCode,
+                        key: e.code,
+                    });
+                    document.getElementById(`${this.inputId}-setkey`).value = 'Set Key';
+                    document.getElementById(`${this.inputId}-key`).innerText = this.getCurrentKey();
+                };
+                document.getElementById(`${this.inputId}-setkey`).value = 'Cancel';
+                document.getElementById(`${this.inputId}-key`).innerText = 'Press key...';
+                document.addEventListener('keydown', captureKey, {
+                    once: true,
+                });
+                document.getElementById(`${this.inputId}-setkey`).addEventListener('click', () => {
+                    document.removeEventListener('keydown', captureKey);
+                    this.refreshElement();
+                });
+            });
+        });
+    }
+
+    getInnerHTML() {
+        let keyPressHtml = `<input id="${this.inputId}" type="text" hidden value='${JSON.stringify(this.getValue())}'>`;
+        keyPressHtml += `<table width="100%"><tbody><tr><td align="left" id="${this.inputId}-key">${this.getKey()}</td><td align="right"><input id="${this.inputId}-setkey" type="button" value="Set Key"></td></tr></tbody></table>`;
+        return keyPressHtml;
+    }
+
+    getKey() {
+        return this.getValue().key;
+    }
+
+    getKeyCode() {
+        return this.getValue().code;
+    }
+
+    getCurrentKey() {
+        return this.getCurrentValue().key;
+    }
+
+    getCurrentCode() {
+        return this.getCurrentValue().code;
+    }
+
+    getCurrentValue() {
+        return JSON.parse(this.getInputElement().value);
+    }
+}
+
 class NumericOption extends AbstractOption {
     constructor({
         id,
@@ -620,20 +674,6 @@ class SaveButton extends HtmlElement {
             }
         }, 2000);
     }
-
-    addClickEventListener({
-        func,
-    }) {
-        if (this.getElement()) {
-            if (this.getElement().addEventListener) {
-                this.getElement().addEventListener('click', func, false);
-            } else if (this.getElement().attachEvent) {
-                this.getElement().attachEvent('onclick', func);
-            }
-        } else {
-            console.log(`No element '${this.id}'.`);
-        }
-    }
 }
 
 class SaveButtonRow extends HtmlElement {
@@ -657,12 +697,8 @@ class SaveButtonRow extends HtmlElement {
         this.saveButton.displaySaved();
     }
 
-    addClickEventListener({
-        func,
-    }) {
-        this.saveButton.addClickEventListener({
-            func,
-        });
+    addClickEventListener(func) {
+        this.saveButton.addEventListener('click', func);
     }
 }
 
@@ -685,72 +721,37 @@ class OptionsGroup extends HtmlElement {
         });
     }
 
-    addBooleanOption({
-        variable,
-        description,
-        defaultValue = false,
-        saveFunction = this.saveFunction,
-        getFunction = this.getFunction,
-        info = null,
-    }) {
+    addBooleanOption(args) {
         const newOption = new BooleanOption({
             id: `${this.id}-option-${this.options.length}`,
-            variable,
-            description,
-            defaultValue,
-            saveFunction,
-            getFunction,
-            info,
+            ...args,
         });
         this.options.push(newOption);
         return newOption;
     }
 
-    addNumericOption({
-        variable,
-        description,
-        defaultValue = 0,
-        min = 0,
-        max = 0,
-        step = 1,
-        saveFunction = this.saveFunction,
-        getFunction = this.getFunction,
-        info = null,
-    }) {
+    addNumericOption(args) {
         const newOption = new NumericOption({
             id: `${this.id}-option-${this.options.length}`,
-            variable,
-            description,
-            defaultValue,
-            min,
-            max,
-            step,
-            saveFunction,
-            getFunction,
-            info,
+            ...args,
         });
         this.options.push(newOption);
         return newOption;
     }
 
-    addSelectOption({
-        variable,
-        description,
-        defaultValue = 0,
-        options = [],
-        saveFunction = this.saveFunction,
-        getFunction = this.getFunction,
-        info = null,
-    }) {
+    addKeyDownOption(args) {
+        const newOption = new KeyDownOption({
+            id: `${this.id}-option-${this.options.length}`,
+            ...args,
+        });
+        this.options.push(newOption);
+        return newOption;
+    }
+
+    addSelectOption(args) {
         const newOption = new SelectOption({
             id: `${this.id}-option-${this.options.length}`,
-            variable,
-            description,
-            defaultValue,
-            options,
-            saveFunction,
-            getFunction,
-            info,
+            ...args,
         });
         this.options.push(newOption);
         return newOption;
@@ -843,35 +844,20 @@ class OptionsBox extends HtmlElement {
 
     setFunctions() {
         if (this.optionsGroup.options.length !== 0) {
-            this.saveButtonRow.addClickEventListener({
-                func: () => {
-                    for (const option of this.optionsGroup.options) {
-                        option.saveValue();
-                    }
-                    this.saveButtonRow.displaySaved();
-                },
+            this.saveButtonRow.addClickEventListener(() => {
+                for (const option of this.optionsGroup.options) {
+                    option.saveValue();
+                }
+                this.saveButtonRow.displaySaved();
             });
         }
     }
 
     addBooleanOption({
-        variable,
-        description,
-        defaultValue = false,
-        customSaveFunction = this.saveFunction,
-        customGetFunction = this.getFunction,
-        info = null,
         refresh = this.refresh,
+        ...args
     }) {
-        const booleanOptions = {
-            variable,
-            description,
-            defaultValue,
-            customSaveFunction,
-            customGetFunction,
-            info,
-        };
-        const newOption = this.optionsGroup.addBooleanOption(booleanOptions);
+        const newOption = this.optionsGroup.addBooleanOption(args);
         if (refresh) {
             this.refreshElement();
         }
@@ -879,29 +865,21 @@ class OptionsBox extends HtmlElement {
     }
 
     addNumericOption({
-        variable,
-        description,
-        defaultValue = false,
-        min = 0,
-        max = 0,
-        step = 1,
-        customSaveFunction = this.saveFunction,
-        customGetFunction = this.getFunction,
-        info = null,
         refresh = this.refresh,
+        ...args
     }) {
-        const numericOptions = {
-            variable,
-            description,
-            defaultValue,
-            min,
-            max,
-            step,
-            customSaveFunction,
-            customGetFunction,
-            info,
-        };
-        const newOption = this.optionsGroup.addNumericOption(numericOptions);
+        const newOption = this.optionsGroup.addNumericOption(args);
+        if (refresh) {
+            this.refreshElement();
+        }
+        return newOption;
+    }
+
+    addKeyDownOption({
+        refresh = this.refresh,
+        ...args
+    }) {
+        const newOption = this.optionsGroup.addKeyDownOption(args);
         if (refresh) {
             this.refreshElement();
         }
@@ -909,25 +887,10 @@ class OptionsBox extends HtmlElement {
     }
 
     addSelectOption({
-        variable,
-        description,
-        defaultValue = false,
-        options = [],
-        customSaveFunction = this.saveFunction,
-        customGetFunction = this.getFunction,
-        info = null,
         refresh = this.refresh,
+        ...args
     }) {
-        const selectOptions = {
-            variable,
-            description,
-            defaultValue,
-            options,
-            customSaveFunction,
-            customGetFunction,
-            info,
-        };
-        const newOption = this.optionsGroup.addSelectOption(selectOptions);
+        const newOption = this.optionsGroup.addSelectOption(args);
         if (refresh) {
             this.refreshElement();
         }
@@ -989,70 +952,28 @@ class OptionsContent extends HtmlElement {
     }
 
     addBox({
-        heading,
-        premium = false,
-        description = '',
-        imageLeft = '',
-        imageRight = '',
-        saveFunction = this.saveFunction,
-        getFunction = this.getFunction,
         top = false,
+        ...args
     }) {
         let newBox = null;
         if (top) {
-            newBox = this.addBoxTop({
-                heading,
-                premium,
-                description,
-                imageLeft,
-                imageRight,
-                saveFunction,
-                getFunction,
-            });
+            newBox = this.addBoxTop(args);
         } else if (this.leftBoxes.length <= this.rightBoxes.length) {
-            newBox = this.addBoxLeft({
-                heading,
-                premium,
-                description,
-                imageLeft,
-                imageRight,
-                saveFunction,
-                getFunction,
-            });
+            newBox = this.addBoxLeft(args);
         } else {
-            newBox = this.addBoxRight({
-                heading,
-                premium,
-                description,
-                imageLeft,
-                imageRight,
-                saveFunction,
-                getFunction,
-            });
+            newBox = this.addBoxRight(args);
         }
         return newBox;
     }
 
     addBoxTop({
-        heading,
-        premium = false,
-        description = '',
-        imageLeft = '',
-        imageRight = '',
-        saveFunction = this.saveFunction,
-        getFunction = this.getFunction,
         refresh = this.refresh,
+        ...args
     }) {
         const newBox = new OptionsBox({
             id: `${this.id}-top-box-${this.topBoxes.length}`,
-            heading,
-            premium,
-            description,
-            imageLeft,
-            imageRight,
-            saveFunction,
-            getFunction,
             refresh,
+            ...args,
         });
 
         this.topBoxes.push(newBox);
@@ -1065,25 +986,13 @@ class OptionsContent extends HtmlElement {
     }
 
     addBoxLeft({
-        heading,
-        premium = false,
-        description = '',
-        imageLeft = '',
-        imageRight = '',
-        saveFunction = this.saveFunction,
-        getFunction = this.getFunction,
         refresh = this.refresh,
+        ...args
     }) {
         const newBox = new OptionsBox({
             id: `${this.id}-left-box-${this.leftBoxes.length}`,
-            heading,
-            premium,
-            description,
-            imageLeft,
-            imageRight,
-            saveFunction,
-            getFunction,
             refresh,
+            ...args,
         });
 
         this.leftBoxes.push(newBox);
@@ -1096,25 +1005,13 @@ class OptionsContent extends HtmlElement {
     }
 
     addBoxRight({
-        heading,
-        premium = false,
-        description = '',
-        imageLeft = '',
-        imageRight = '',
-        saveFunction = this.saveFunction,
-        getFunction = this.getFunction,
         refresh = this.refresh,
+        ...args
     }) {
         const newBox = new OptionsBox({
             id: `${this.id}-right-box-${this.rightBoxes.length}`,
-            heading,
-            premium,
-            description,
-            imageLeft,
-            imageRight,
-            saveFunction,
-            getFunction,
             refresh,
+            ...args,
         });
 
         this.rightBoxes.push(newBox);
@@ -1126,66 +1023,24 @@ class OptionsContent extends HtmlElement {
         return newBox;
     }
 
-    addPremiumBox({
-        heading,
-        description = '',
-        imageLeft = '',
-        imageRight = '',
-        saveFunction = this.saveFunction,
-        getFunction = this.getFunction,
-        refresh = this.refresh,
-    }) {
+    addPremiumBox(args) {
         return this.addBox({
-            heading,
             premium: true,
-            description,
-            imageLeft,
-            imageRight,
-            saveFunction,
-            getFunction,
-            refresh,
+            ...args,
         });
     }
 
-    addPremiumBoxLeft({
-        heading,
-        description = '',
-        imageLeft = '',
-        imageRight = '',
-        saveFunction = this.saveFunction,
-        getFunction = this.getFunction,
-        refresh = this.refresh,
-    }) {
+    addPremiumBoxLeft(args) {
         return this.addBoxLeft({
-            heading,
             premium: true,
-            description,
-            imageLeft,
-            imageRight,
-            saveFunction,
-            getFunction,
-            refresh,
+            ...args,
         });
     }
 
-    addPremiumBoxRight({
-        heading,
-        description = '',
-        imageLeft = '',
-        imageRight = '',
-        saveFunction = this.saveFunction,
-        getFunction = this.getFunction,
-        refresh = this.refresh,
-    }) {
+    addPremiumBoxRight(args) {
         return this.addBoxRight({
-            heading,
             premium: true,
-            description,
-            imageLeft,
-            imageRight,
-            saveFunction,
-            getFunction,
-            refresh,
+            ...args,
         });
     }
 
