@@ -1205,7 +1205,7 @@ class TabContent extends HtmlElement {
             label: defaultLabel,
             saveFunction: this.saveFunction,
             getFunction: this.getFunction,
-            refresh: this.refresh,
+            refresh: false,
             active: true,
         });
         this.versionRow = new VersionRow({
@@ -1257,6 +1257,10 @@ class TabContent extends HtmlElement {
         newSubTabLabel.addEventListener('click', () => {
             this.setActiveSubTab(newSubTab.id);
         });
+
+        if (refresh) {
+            this.refreshElement();
+        }
 
         return newSubTabContent;
     }
@@ -1495,6 +1499,7 @@ class PardusOptions {
             id: 'pardus-default',
             heading: 'Pardus Options',
             content: defaultPardusOptionsContent.outerHTML,
+            refresh: false,
         });
 
         // Set the Pardus options tab to be active by default
