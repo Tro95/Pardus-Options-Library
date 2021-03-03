@@ -30,6 +30,13 @@ class PardusOptionsUtility {
         return `${this.getUniverse()}_${variableName}`;
     }
 
+    /**
+     *  Returns the universe-specific value of a variable
+     */
+    static getVariableValue(variableName, defaultValue = null) {
+        return GM_getValue(this.getVariableName(variableName), defaultValue);
+    }
+
     static setActiveTab(id) {
         window.localStorage.setItem('pardusOptionsOpenTab', id);
         window.dispatchEvent(new window.Event('storage'));
@@ -383,6 +390,10 @@ class AbstractOption extends HtmlElement {
         return document.getElementById(this.inputId);
     }
 
+    resetValue() {
+        this.saveFunction(`${PardusOptionsUtility.getVariableName(this.variable)}`, this.defaultValue);
+    }
+
     saveValue() {
         this.saveFunction(`${PardusOptionsUtility.getVariableName(this.variable)}`, this.getCurrentValue());
     }
@@ -399,6 +410,40 @@ class BooleanOption extends AbstractOption {
 
     getCurrentValue() {
         return this.getInputElement().checked;
+    }
+}
+
+class TextAreaOption extends AbstractOption {
+    constructor({
+        id,
+        variable,
+        description,
+        defaultValue = 0,
+        saveFunction = PardusOptionsUtility.defaultSaveFunction,
+        getFunction = PardusOptionsUtility.defaultGetFunction,
+        info = null,
+        rows = 3,
+        cols = 65,
+    }) {
+        super({
+            id,
+            variable,
+            description,
+            defaultValue,
+            saveFunction,
+            getFunction,
+            info,
+        });
+        this.rows = rows;
+        this.cols = cols;
+    }
+
+    getInnerHTML() {
+        return `<textarea id="${this.inputId}" autocomplete="off" autocorrect="off" spellcheck="false" ${(this.rows === 0) ? '' : `rows="${this.rows}"`} ${(this.cols === 0) ? '' : `cols="${this.cols}"`} style="font-family: Helvetica, Arial, sans-serif;background-color:#00001C; color:#D0D1D9; font-size:11px; width:300px">${this.getValue()}</textarea>`;
+    }
+
+    getCurrentValue() {
+        return this.getInputElement().value;
     }
 }
 
@@ -520,7 +565,7 @@ class SelectOption extends AbstractOption {
         const savedValue = this.getValue();
         let hasSelected = false;
         for (const option of this.options) {
-            if (!hasSelected && (option.value === savedValue || (option.default && option.default === true))) {
+            if (!hasSelected && (option.value === savedValue || (option.default && option.default === true && !savedValue))) {
                 selectHtml += `<option value=${option.value} selected>${option.text}</option>`;
                 hasSelected = true;
             } else {
@@ -676,10 +721,46 @@ class SaveButton extends HtmlElement {
     }
 }
 
+class ResetButton extends HtmlElement {
+    constructor({
+        id,
+        premium = false,
+    }) {
+        super(id);
+        this.premium = premium;
+
+        if (this.premium) {
+            this.colour = '#FFCC11';
+        } else {
+            this.colour = '#D0D1D9';
+        }
+    }
+
+    toString() {
+        return `<input value="Reset" id="${this.id}" type="button" style="color:${this.colour}">`;
+    }
+
+    displayReset() {
+        this.getElement().setAttribute('disabled', 'true');
+        this.getElement().value = 'Reset';
+        this.getElement().setAttribute('style', 'color:green;background-color:silver');
+        setTimeout(() => {
+            this.getElement().removeAttribute('disabled');
+            this.getElement().value = 'Reset';
+            if (this.premium) {
+                this.getElement().setAttribute('style', 'color:#FFCC11');
+            } else {
+                this.getElement().removeAttribute('style');
+            }
+        }, 2000);
+    }
+}
+
 class SaveButtonRow extends HtmlElement {
     constructor({
         id,
         premium = false,
+        resetButton = false,
     }) {
         super(id);
         this.premium = premium;
@@ -687,18 +768,39 @@ class SaveButtonRow extends HtmlElement {
             id: `${this.id}-button`,
             premium,
         });
+
+        if (resetButton) {
+            this.resetButton = new ResetButton({
+                id: `${this.id}-reset-button`,
+                premium,
+            });
+        } else {
+            this.resetButton = null;
+        }
     }
 
     toString() {
-        return `<tr id="${this.id}"><td align="right">${this.saveButton}</td></tr>`;
+        return `<tr id="${this.id}"><td align="right">${(this.resetButton) ? `${this.resetButton}&nbsp` : ''}${this.saveButton}</td></tr>`;
     }
 
     displaySaved() {
         this.saveButton.displaySaved();
     }
 
-    addClickEventListener(func) {
+    displayReset() {
+        if (this.resetButton) {
+            this.resetButton.displayReset();
+        }
+    }
+
+    addSaveEventListener(func) {
         this.saveButton.addEventListener('click', func);
+    }
+
+    addResetEventListener(func) {
+        if (this.resetButton) {
+            this.resetButton.addEventListener('click', func);
+        }
     }
 }
 
@@ -723,6 +825,15 @@ class OptionsGroup extends HtmlElement {
 
     addBooleanOption(args) {
         const newOption = new BooleanOption({
+            id: `${this.id}-option-${this.options.length}`,
+            ...args,
+        });
+        this.options.push(newOption);
+        return newOption;
+    }
+
+    addTextAreaOption(args) {
+        const newOption = new TextAreaOption({
             id: `${this.id}-option-${this.options.length}`,
             ...args,
         });
@@ -792,6 +903,7 @@ class OptionsBox extends HtmlElement {
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
         refresh = true,
+        resetButton = false,
     }) {
         super(id);
         this.heading = heading;
@@ -799,6 +911,7 @@ class OptionsBox extends HtmlElement {
         this.saveFunction = saveFunction;
         this.getFunction = getFunction;
         this.refresh = refresh;
+        this.resetButton = resetButton;
 
         const headerHtml = (premium) ? '<th class="premium">' : '<th>';
         this.frontContainer = `<form id="${this.id}" action="none"><table style="background:url(${PardusOptionsUtility.getImagePackUrl()}bgd.gif)" width="100%" cellpadding="3" align="center"><tbody><tr>${headerHtml}${heading}</th></tr>`;
@@ -819,6 +932,7 @@ class OptionsBox extends HtmlElement {
         this.saveButtonRow = new SaveButtonRow({
             id: `${this.id}-save`,
             premium,
+            resetButton,
         });
         this.addAfterRefreshHook((opts) => {
             if (opts.maintainRefreshStatus) {
@@ -844,11 +958,18 @@ class OptionsBox extends HtmlElement {
 
     setFunctions() {
         if (this.optionsGroup.options.length !== 0) {
-            this.saveButtonRow.addClickEventListener(() => {
+            this.saveButtonRow.addSaveEventListener(() => {
                 for (const option of this.optionsGroup.options) {
                     option.saveValue();
                 }
                 this.saveButtonRow.displaySaved();
+            });
+            this.saveButtonRow.addResetEventListener(() => {
+                for (const option of this.optionsGroup.options) {
+                    option.resetValue();
+                }
+                this.saveButtonRow.displayReset();
+                this.optionsGroup.refreshElement();
             });
         }
     }
@@ -858,6 +979,17 @@ class OptionsBox extends HtmlElement {
         ...args
     }) {
         const newOption = this.optionsGroup.addBooleanOption(args);
+        if (refresh) {
+            this.refreshElement();
+        }
+        return newOption;
+    }
+
+    addTextAreaOption({
+        refresh = this.refresh,
+        ...args
+    }) {
+        const newOption = this.optionsGroup.addTextAreaOption(args);
         if (refresh) {
             this.refreshElement();
         }
