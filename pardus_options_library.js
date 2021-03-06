@@ -45,7 +45,7 @@ class PardusOptionsUtility {
      *  Sets the universe-specific value of a variable
      */
     static setVariableValue(variableName, value) {
-        return this.defaultSetFunction(this.getVariableName(variableName), value);
+        return this.defaultSaveFunction(this.getVariableName(variableName), value);
     }
 
     /**
