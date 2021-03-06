@@ -7,6 +7,10 @@ class PardusOptionsUtility {
         return GM_getValue(key, defaultValue);
     }
 
+    static defaultDeleteFunction(key) {
+        return GM_deleteValue(key);
+    }
+
     /**
      *  Returns the active universe
      */
@@ -34,7 +38,21 @@ class PardusOptionsUtility {
      *  Returns the universe-specific value of a variable
      */
     static getVariableValue(variableName, defaultValue = null) {
-        return GM_getValue(this.getVariableName(variableName), defaultValue);
+        return this.defaultGetFunction(this.getVariableName(variableName), defaultValue);
+    }
+
+    /**
+     *  Sets the universe-specific value of a variable
+     */
+    static setVariableValue(variableName, value) {
+        return this.defaultSetFunction(this.getVariableName(variableName), value);
+    }
+
+    /**
+     *  Deletes the universe-specific value of a variable
+     */
+    static deleteVariableValue(variableName) {
+        return this.defaultDeleteFunction(this.getVariableName(variableName));
     }
 
     static setActiveTab(id) {
