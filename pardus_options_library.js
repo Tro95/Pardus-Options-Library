@@ -348,7 +348,7 @@ class AbstractOption extends HtmlElement {
     constructor({
         id,
         variable,
-        description,
+        description = '',
         defaultValue = false,
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
@@ -389,6 +389,11 @@ class AbstractOption extends HtmlElement {
         if (this.reverse) {
             return `<tr id='${this.id}'><td>${this.getInnerHTML()}</td><td><label for='${this.inputId}'>${this.description}</label>${this.infoElement}</td></tr>`;
         }
+
+        if (this.description === '') {
+            return `<tr id='${this.id}'><td col="2">${this.getInnerHTML()}</td></tr>`;
+        }
+
         return `<tr id='${this.id}'><td><label for='${this.inputId}'>${this.description}:</label>${this.infoElement}</td><td>${this.getInnerHTML()}</td></tr>`;
     }
 
@@ -457,7 +462,7 @@ class TextAreaOption extends AbstractOption {
     }
 
     getInnerHTML() {
-        return `<textarea id="${this.inputId}" autocomplete="off" autocorrect="off" spellcheck="false" ${(this.rows === 0) ? '' : `rows="${this.rows}"`} ${(this.cols === 0) ? '' : `cols="${this.cols}"`} style="font-family: Helvetica, Arial, sans-serif;background-color:#00001C; color:#D0D1D9; font-size:11px; width:300px">${this.getValue()}</textarea>`;
+        return `<textarea id="${this.inputId}" autocomplete="off" autocorrect="off" spellcheck="false" ${(this.rows === 0) ? '' : `rows="${this.rows}"`} ${(this.cols === 0) ? '' : `cols="${this.cols}"`} style="font-family: Helvetica, Arial, sans-serif;background-color:#00001C; color:#D0D1D9; font-size:11px;">${this.getValue()}</textarea>`;
     }
 
     getCurrentValue() {
@@ -990,6 +995,10 @@ class OptionsBox extends HtmlElement {
                 this.optionsGroup.refreshElement();
             });
         }
+    }
+
+    addSaveEventListener(func) {
+        return this.saveButtonRow.addSaveEventListener(func);
     }
 
     addBooleanOption({
