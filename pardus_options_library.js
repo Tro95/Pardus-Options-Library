@@ -569,6 +569,7 @@ class SelectOption extends AbstractOption {
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
         info = null,
+        inheritStyle = false,
         options = [],
     }) {
         super({
@@ -581,22 +582,38 @@ class SelectOption extends AbstractOption {
             info,
         });
         this.options = options;
+
+        if (inheritStyle) {
+            this.addEventListener('change', () => {
+                this.updateSelectStyle();
+            });
+        }
     }
 
     getInnerHTML() {
-        let selectHtml = `<select id="${this.inputId}">`;
+        let selectHtml = '';
         const savedValue = this.getValue();
         let hasSelected = false;
+        let selectStyle = '';
         for (const option of this.options) {
+            const style = (option.style) ? ` style="${option.style}"` : '';
             if (!hasSelected && (option.value === savedValue || (option.default && option.default === true && !savedValue))) {
-                selectHtml += `<option value=${option.value} selected>${option.text}</option>`;
+                selectHtml += `<option value=${option.value}${style} selected>${option.text}</option>`;
                 hasSelected = true;
+                selectStyle = (option.style) ? ` style="${option.style}"` : '';
             } else {
-                selectHtml += `<option value=${option.value}>${option.text}</option>`;
+                selectHtml += `<option value=${option.value}${style}>${option.text}</option>`;
             }
         }
 
+        selectHtml = `<select id="${this.inputId}"${selectStyle}>` + selectHtml;
+
         return selectHtml;
+    }
+
+    updateSelectStyle() {
+        const current_style = this.getInputElement().selectedOptions[0].getAttribute('style');
+        this.getInputElement().setAttribute('style', current_style);
     }
 
     getOptions() {
