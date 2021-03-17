@@ -606,14 +606,14 @@ class SelectOption extends AbstractOption {
             }
         }
 
-        selectHtml = `<select id="${this.inputId}"${selectStyle}>` + selectHtml;
+        selectHtml = `<select id="${this.inputId}"${selectStyle}>${selectHtml}`;
 
         return selectHtml;
     }
 
     updateSelectStyle() {
-        const current_style = this.getInputElement().selectedOptions[0].getAttribute('style');
-        this.getInputElement().setAttribute('style', current_style);
+        const currentStyle = this.getInputElement().selectedOptions[0].getAttribute('style');
+        this.getInputElement().setAttribute('style', currentStyle);
     }
 
     getOptions() {
