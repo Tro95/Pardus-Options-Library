@@ -1003,6 +1003,9 @@ class OptionsBox extends HtmlElement {
                     option.saveValue();
                 }
                 this.saveButtonRow.displaySaved();
+
+                const event = new Event('save');
+                this.getElement().dispatchEvent(event);
             });
             this.saveButtonRow.addResetEventListener(() => {
                 for (const option of this.optionsGroup.options) {
@@ -1010,6 +1013,9 @@ class OptionsBox extends HtmlElement {
                 }
                 this.saveButtonRow.displayReset();
                 this.optionsGroup.refreshElement();
+
+                const event = new Event('reset');
+                this.getElement().dispatchEvent(event);
             });
         }
     }
