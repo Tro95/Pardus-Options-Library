@@ -10,6 +10,12 @@ globals:
 parserOptions:
   ecmaVersion: 2018
 rules:
+  import/extensions:
+    - error
+    - js: always
+      json: never
+  import/no-cycle:
+    - off
   indent:
     - error
     - 4

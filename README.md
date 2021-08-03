@@ -7,7 +7,7 @@ At the top of your Tampermonkey script, ensure you have the following lines:
 // @include     http*://*.pardus.at/options.php
 // @grant       GM_setValue
 // @grant       GM_getValue
-// @require     https://raw.githubusercontent.com/Tro95/Pardus-Options-Library/v2.0/pardus_options_library.js
+// @require     https://raw.githubusercontent.com/Tro95/Pardus-Options-Library/v2.2/pardus_options_library.js
 ```
 The `GM_setValue` and `GM_getValue` methods are required to persistently store the user's settings.
 
@@ -296,7 +296,7 @@ Returns an object of type NumericOption, although this isn't used for anything.
 
 Example:
 ```javascript
-myBox.addNumericOption({
+myBox.addSelectOption({
     variable: 'attack_style',
     description: 'Attack style to use',
     options: [
