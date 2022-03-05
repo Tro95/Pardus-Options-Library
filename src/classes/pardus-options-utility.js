@@ -1,18 +1,32 @@
+/**
+ * @module PardusOptionsUtility
+ */
 export default class PardusOptionsUtility {
+    /**
+     * @ignore
+     */
     static defaultSaveFunction(key, value) {
         return GM_setValue(key, value);
     }
 
+    /**
+     * @ignore
+     */
     static defaultGetFunction(key, defaultValue = null) {
         return GM_getValue(key, defaultValue);
     }
 
+    /**
+     * @ignore
+     */
     static defaultDeleteFunction(key) {
         return GM_deleteValue(key);
     }
 
     /**
      *  Returns the active universe
+     *  @returns {string} One of 'orion', 'artemis', or 'pegasus'
+     *  @throws Will throw an error if no universe could be determined.
      */
     static getUniverse() {
         switch (document.location.hostname) {

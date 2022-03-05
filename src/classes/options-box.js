@@ -1,6 +1,7 @@
 import HtmlElement from './html-element.js';
 import PardusOptionsUtility from './pardus-options-utility.js';
 import SaveButtonRow from './save-button-row/save-button-row.js';
+import Presets from './save-button-row/presets.js';
 import OptionsGroup from './options-group.js';
 import DescriptionElement from './description-element.js';
 
@@ -16,6 +17,7 @@ export default class OptionsBox extends HtmlElement {
         getFunction = PardusOptionsUtility.defaultGetFunction,
         refresh = true,
         resetButton = false,
+        presets = 0,
     }) {
         super(id);
         this.heading = heading;
@@ -46,6 +48,11 @@ export default class OptionsBox extends HtmlElement {
             premium,
             resetButton,
         });
+        this.presets = new Presets({
+            id: `${this.id}-presets`,
+            premium,
+            presets,
+        });
         this.addAfterRefreshHook((opts) => {
             if (opts.maintainRefreshStatus) {
                 return;
@@ -65,7 +72,7 @@ export default class OptionsBox extends HtmlElement {
         if (this.optionsGroup.options.length === 0) {
             return this.frontContainer + this.description + this.innerHtml + this.optionsGroup + this.backContainer;
         }
-        return this.frontContainer + this.description + this.innerHtml + this.optionsGroup + this.saveButtonRow + this.backContainer;
+        return this.frontContainer + this.description + this.innerHtml + this.optionsGroup + this.saveButtonRow + this.presets + this.backContainer;
     }
 
     setFunctions() {
@@ -90,6 +97,8 @@ export default class OptionsBox extends HtmlElement {
                 this.getElement().dispatchEvent(event);
             });
         }
+
+        this.presets.setFunctions(this.optionsGroup.options);
     }
 
     addSaveEventListener(func) {

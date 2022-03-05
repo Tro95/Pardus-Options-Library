@@ -1,6 +1,6 @@
 import AbstractButton from './abstract-button.js';
 
-export default class ResetButton extends AbstractButton {
+export default class LoadButton extends AbstractButton {
     constructor({
         id,
         premium = false,
@@ -8,12 +8,12 @@ export default class ResetButton extends AbstractButton {
         super({
             id,
             premium,
-            actionText: 'Reset',
-            actionPerformedText: 'Reset',
+            actionText: 'Load',
+            actionPerformedText: 'Loaded',
         });
     }
 
-    displayReset() {
+    displayLoaded() {
         this.displayClicked();
     }
 }

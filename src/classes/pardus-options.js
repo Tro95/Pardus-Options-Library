@@ -4,7 +4,13 @@ import TabsElement from './tabs/tabs-element.js';
 import ContentsArea from './contents-area.js';
 import Tab from './tabs/tab.js';
 
+/**
+ * @module PardusOptions
+ */
 export default class PardusOptions {
+    /**
+     *  @ignore
+     */
     static init() {
         if (document.getElementById('options-area')) {
             return;
@@ -39,40 +45,66 @@ export default class PardusOptions {
         PardusOptionsUtility.setActiveTab('pardus-default');
     }
 
+    /**
+     *  @deprecated Get the version of the Pardus Options Library running
+     */
     static version() {
         return 1.6;
     }
 
+    /**
+     * @ignore
+     */
     static createDefaultTipBox() {
         return new TipBox({
             id: 'options-default-tip-box',
         });
     }
 
+    /**
+     * @ignore
+     */
     static getDefaultTipBox() {
         const defaultTipBox = this.createDefaultTipBox();
         defaultTipBox.refreshElement();
         return defaultTipBox;
     }
 
+    /**
+     * @ignore
+     */
     static getTabsElement() {
         return new TabsElement({
             id: 'options-tabs',
         });
     }
 
+    /**
+     * @ignore
+     */
     static getContentElement() {
         return new ContentsArea({
             id: 'options-content',
         });
     }
 
+    /**
+     * @ignore
+     */
     static getPardusOptionsElement() {
         const template = document.createElement('template');
         template.innerHTML = `<table id="options-area" cellspacing="0" cellpadding="0" border="0"><tbody><tr cellspacing="0" cellpadding="0" border="0"><td>${this.getTabsElement()}</td></tr>${this.getContentElement()}</tbody></table>`;
         return template.content.firstChild;
     }
 
+    /**
+     * Add a tab on the Options page on Pardus to show your options
+     * @param {Object} params An object containing parameter values
+     * @param {string} params.id A namespace identifier to identify the tab from other tabs. Must be globally unique.
+     * @param {string} params.heading Text to display in the tab
+     * @param {string} params.content HTML to embed within the tab.
+     * @returns {TabContent} Tab
+     */
     static addTab({
         id,
         heading,

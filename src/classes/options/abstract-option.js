@@ -2,6 +2,11 @@ import HtmlElement from '../html-element.js';
 import InfoElement from '../info-element.js';
 import PardusOptionsUtility from '../pardus-options-utility.js';
 
+/**
+ * @class AbstractOption
+ * @extends HtmlElement
+ * @abstract
+ */
 export default class AbstractOption extends HtmlElement {
     constructor({
         id,
@@ -55,27 +60,70 @@ export default class AbstractOption extends HtmlElement {
         return `<tr id='${this.id}'><td><label for='${this.inputId}'>${this.description}:</label>${this.infoElement}</td><td>${this.getInnerHTML()}</td></tr>`;
     }
 
+    /**
+     * Get the inner HTML of the options element
+     * @abstract
+     * @function AbstractOption#getInnerHTML
+     * @returns {string} Inner HTML of the options element
+     */
     getInnerHTML() {
         return '';
     }
 
-    getValue() {
+    /**
+     * Gets the last-saved value of the options element
+     * @function AbstractOption#getValue
+     * @returns {type} Last-saved value of the options element
+     */
+    getValue(overrideGetFunction = null) {
+        if (overrideGetFunction && typeof overrideGetFunction === 'function') {
+            return overrideGetFunction(`${PardusOptionsUtility.getVariableName(this.variable)}`, this.defaultValue);
+        }
+
         return this.getFunction(`${PardusOptionsUtility.getVariableName(this.variable)}`, this.defaultValue);
     }
 
+    /**
+     * Gets the current value of the options element
+     * @abstract
+     * @function AbstractOption#getCurrentValue
+     * @returns {type} Value of the options element
+     */
     getCurrentValue() {
         return null;
     }
 
+    /**
+     * Gets the input element for the option
+     * @function AbstractOption#getInputElement
+     * @returns {object} Input element
+     */
     getInputElement() {
         return document.getElementById(this.inputId);
     }
 
+    /**
+     * Resets the saved value of the options element to its default
+     * @function AbstractOption#resetValue
+     */
     resetValue() {
         this.saveFunction(`${PardusOptionsUtility.getVariableName(this.variable)}`, this.defaultValue);
     }
 
-    saveValue() {
-        this.saveFunction(`${PardusOptionsUtility.getVariableName(this.variable)}`, this.getCurrentValue());
+    /**
+     * Saves the current value of the options element
+     * @function AbstractOption#saveValue
+     */
+    saveValue(overrideSaveFunction = null) {
+        if (overrideSaveFunction && typeof overrideSaveFunction === 'function') {
+            overrideSaveFunction(`${PardusOptionsUtility.getVariableName(this.variable)}`, this.getCurrentValue());
+        } else {
+            this.saveFunction(`${PardusOptionsUtility.getVariableName(this.variable)}`, this.getCurrentValue());
+        }
+    }
+
+    loadValue(value) {
+        this.getInputElement().value = value;
+        this.saveValue();
     }
 }

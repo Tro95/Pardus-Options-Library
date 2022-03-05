@@ -1,5 +1,9 @@
 import AbstractOption from './abstract-option.js';
 
+/**
+ * @class BooleanOption
+ * @extends AbstractOption
+ */
 export default class BooleanOption extends AbstractOption {
     getInnerHTML() {
         let checkedStatus = '';

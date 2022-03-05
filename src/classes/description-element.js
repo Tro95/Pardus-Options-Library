@@ -1,7 +1,8 @@
 import HtmlElement from './html-element.js';
 
 /**
- *  Controls the description for a specific OptionsBox, only one description per OptionsBox permitted
+ * Controls the description for a specific OptionsBox, only one description per OptionsBox permitted
+ * @private
  */
 export default class DescriptionElement extends HtmlElement {
     constructor({
