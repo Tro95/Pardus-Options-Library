@@ -83,14 +83,14 @@ export default class PardusOptionsUtility {
      */
     static addGlobalListeners() {
         EventTarget.prototype.addPardusKeyDownListener = function addPardusKeyDownListener(pardusVariable, listener, options = false) {
+            const pardusVariableKey = PardusOptionsUtility.getVariableValue(pardusVariable);
+
+            if (!pardusVariableKey) {
+                throw new Error(`No Pardus variable ${pardusVariable} defined!`);
+            }
+
             this.addEventListener('keydown', (event) => {
                 if (event.isComposing || event.keyCode === 229 || event.repeat) {
-                    return;
-                }
-
-                const pardusVariableKey = PardusOptionsUtility.getVariableValue(pardusVariable);
-
-                if (!pardusVariableKey) {
                     return;
                 }
 
