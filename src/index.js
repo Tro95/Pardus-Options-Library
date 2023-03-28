@@ -8,4 +8,6 @@ if (document.location.pathname === '/options.php') {
     PardusOptions.init();
 }
 
+PardusOptionsUtility.addGlobalListeners();
+
 export { PardusOptions, PardusOptionsUtility };

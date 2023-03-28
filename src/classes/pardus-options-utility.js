@@ -77,4 +77,29 @@ export default class PardusOptionsUtility {
     static getImagePackUrl() {
         return String(document.querySelector('body').style.backgroundImage).replace(/url\("*|"*\)|[a-z0-9]+\.gif/g, '');
     }
+
+    /**
+     * @ignore
+     */
+    static addGlobalListeners() {
+        EventTarget.prototype.addPardusKeyDownListener = function addPardusKeyDownListener(pardusVariable, listener, options = false) {
+            this.addEventListener('keydown', (event) => {
+                if (event.isComposing || event.keyCode === 229 || event.repeat) {
+                    return;
+                }
+
+                const pardusVariableKey = PardusOptionsUtility.getVariableValue(pardusVariable);
+
+                if (!pardusVariableKey) {
+                    return;
+                }
+
+                if (event.keyCode !== pardusVariableKey.code) {
+                    return;
+                }
+
+                listener();
+            }, options);
+        };
+    }
 }

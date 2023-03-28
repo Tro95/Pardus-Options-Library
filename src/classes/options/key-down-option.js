@@ -10,9 +10,10 @@ export default class KeyDownOption extends AbstractOption {
                     this.getInputElement().value = JSON.stringify({
                         code: e.keyCode,
                         key: e.code,
+                        description: e.key,
                     });
                     document.getElementById(`${this.inputId}-setkey`).value = 'Set Key';
-                    document.getElementById(`${this.inputId}-key`).innerText = this.getCurrentKey();
+                    document.getElementById(`${this.inputId}-key`).innerText = this.getCurrentKeyDescription();
                 };
                 document.getElementById(`${this.inputId}-setkey`).value = 'Cancel';
                 document.getElementById(`${this.inputId}-key`).innerText = 'Press key...';
@@ -29,12 +30,16 @@ export default class KeyDownOption extends AbstractOption {
 
     getInnerHTML() {
         let keyPressHtml = `<input id="${this.inputId}" type="text" hidden value='${JSON.stringify(this.getValue())}'>`;
-        keyPressHtml += `<table width="100%"><tbody><tr><td align="left" id="${this.inputId}-key">${this.getKey()}</td><td align="right"><input id="${this.inputId}-setkey" type="button" value="Set Key"></td></tr></tbody></table>`;
+        keyPressHtml += `<table width="100%"><tbody><tr><td align="left" id="${this.inputId}-key">${this.getKeyDescription()}</td><td align="right"><input id="${this.inputId}-setkey" type="button" value="Set Key"></td></tr></tbody></table>`;
         return keyPressHtml;
     }
 
     getKey() {
         return this.getValue().key;
+    }
+
+    getKeyDescription() {
+        return this.getValue().description;
     }
 
     getKeyCode() {
@@ -43,6 +48,10 @@ export default class KeyDownOption extends AbstractOption {
 
     getCurrentKey() {
         return this.getCurrentValue().key;
+    }
+
+    getCurrentKeyDescription() {
+        return this.getCurrentValue().description;
     }
 
     getCurrentCode() {
