@@ -82,8 +82,8 @@ export default class PardusOptionsUtility {
      * @ignore
      */
     static addGlobalListeners() {
-        EventTarget.prototype.addPardusKeyDownListener = function addPardusKeyDownListener(pardusVariable, listener, options = false) {
-            const pardusVariableKey = PardusOptionsUtility.getVariableValue(pardusVariable);
+        EventTarget.prototype.addPardusKeyDownListener = function addPardusKeyDownListener(pardusVariable, defaultValue = null, listener, options = false) {
+            const pardusVariableKey = PardusOptionsUtility.getVariableValue(pardusVariable, defaultValue);
 
             if (!pardusVariableKey) {
                 throw new Error(`No Pardus variable ${pardusVariable} defined!`);

@@ -26,6 +26,12 @@ export default class AbstractButton extends HtmlElement {
         return `<input value="${this.actionText}" id="${this.id}" type="button" style="${this.style}" ${this.disabled ? 'disabled' : ''}>`;
     }
 
+    setActionText(actionText = '', actionPerformedText = '') {
+        this.actionText = actionText;
+        this.actionPerformedText = actionPerformedText;
+        this.refreshElement();
+    }
+
     displayClicked() {
         this.getElement().setAttribute('disabled', 'true');
         this.getElement().value = this.actionPerformedText;

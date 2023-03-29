@@ -1,4 +1,4 @@
-import AbstractButton from './abstract-button.js';
+import AbstractButton from '../abstract/abstract-button.js';
 
 export default class LoadButton extends AbstractButton {
     constructor({

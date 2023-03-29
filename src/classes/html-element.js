@@ -40,6 +40,18 @@ export default class HtmlElement {
     }
 
     /**
+     * Remove an event listener from the element
+     * @function HtmlElement#removeEventListener
+     * @param {string} eventName Name of the event to listen for
+     * @param {function} listener Listener to call when the event fires
+     */
+    removeEventListener(eventName, listener) {
+        if (this.getElement()) {
+            this.getElement().removeEventListener(eventName, listener);
+        }
+    }
+
+    /**
      * Return a string representation of the html element
      * @function HtmlElement#toString
      * @returns {string} String representation of the html element
