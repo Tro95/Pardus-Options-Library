@@ -92,7 +92,18 @@ export default class PardusOptionsUtility {
                 throw new Error(`No Pardus variable ${pardusVariable} defined!`);
             }
 
-            this.addEventListener('keydown', (event) => {
+            if (!this.pardusListeners) {
+                this.pardusListeners = [];
+            }
+
+            // Prevent duplicates from being added
+            if (this.pardusListeners.includes(`${pardusVariableKey.code}${pardusVariable}`)) {
+                return;
+            }
+
+            this.pardusListeners.push(`${pardusVariableKey.code}${pardusVariable}`);
+
+            const eventListener = (event) => {
                 if (event.isComposing || event.keyCode === 229 || event.repeat) {
                     return;
                 }
@@ -101,8 +112,10 @@ export default class PardusOptionsUtility {
                     return;
                 }
 
-                listener();
-            }, options);
+                listener(event);
+            };
+
+            this.addEventListener('keydown', eventListener, options);
         };
     }
 }
