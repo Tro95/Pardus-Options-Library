@@ -75,7 +75,10 @@ export default class PardusOptionsUtility {
     }
 
     static getImagePackUrl() {
-        return String(document.querySelector('body').style.backgroundImage).replace(/url\("*|"*\)|[a-z0-9]+\.gif/g, '');
+        const defaultImagePackUrl = '//static.pardus.at/img/std/';
+        const imagePackUrl = String(document.querySelector('body').style.backgroundImage).replace(/url\("*|"*\)|[a-z0-9]+\.gif/g, '');
+
+        return imagePackUrl !== '' ? imagePackUrl : defaultImagePackUrl;
     }
 
     /**
