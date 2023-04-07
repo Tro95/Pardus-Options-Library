@@ -42,7 +42,7 @@ export default class KeyDownOption extends AbstractOption {
 
     getInnerHTML() {
         let keyPressHtml = `<input id="${this.inputId}" type="text" hidden value='${JSON.stringify(this.getValue())}'>`;
-        keyPressHtml += `<table width="100%"><tbody><tr><td align="left"><input id="${this.inputId}-key" type="text" cols="1" maxlength="1" readonly value="${this.getKeyDescription()}" style="width: 20px;padding: 2px;text-align: center;margin: 2px 7px 2px;"/></td><td align="right">${this.setKeyButton}</td></tr></tbody></table>`;
+        keyPressHtml += `<table width="100%"><tbody><tr><td align="left"><input id="${this.inputId}-key" type="text" cols="1" maxlength="1" readonly value="${this.getKeyDescription()}" style="width: 20px;padding: 2px;text-align: center;margin: 2px 7px 2px;" style="${this.style}" ${this.disabled ? 'disabled' : ''}/></td><td align="right">${this.setKeyButton}</td></tr></tbody></table>`;
         return keyPressHtml;
     }
 

@@ -9,6 +9,7 @@ export default class NumericOption extends AbstractOption {
         defaultValue = 0,
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
+        disabled = false,
         min = 0,
         max = 0,
         step = 1,
@@ -22,6 +23,7 @@ export default class NumericOption extends AbstractOption {
             saveFunction,
             getFunction,
             info,
+            disabled,
         });
         this.minValue = min;
         this.maxValue = max;
@@ -29,7 +31,7 @@ export default class NumericOption extends AbstractOption {
     }
 
     getInnerHTML() {
-        return `<input id="${this.inputId}" type="number" min="${this.minValue}" max="${this.maxValue}" step="${this.stepValue}" value="${this.getValue()}">`;
+        return `<input id="${this.inputId}" type="number" min="${this.minValue}" max="${this.maxValue}" step="${this.stepValue}" value="${this.getValue()}" style="${this.style}" ${this.disabled ? 'disabled' : ''}>`;
     }
 
     getCurrentValue() {

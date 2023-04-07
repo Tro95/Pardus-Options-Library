@@ -1,28 +1,35 @@
-import HtmlElement from '../html-element.js';
+import DisablableHtmlElement from '../disablable-html-element.js';
 import SaveButton from './save-button.js';
 import LoadButton from './load-button.js';
 import PresetLabel from './preset-label.js';
 
-export default class PresetRow extends HtmlElement {
+export default class PresetRow extends DisablableHtmlElement {
     constructor({
         id,
         premium = false,
+        disabled = false,
         presetNumber,
     }) {
-        super(id);
+        super({
+            id,
+            disabled,
+        });
         this.premium = premium;
         this.saveButton = new SaveButton({
             id: `${this.id}-save-button`,
             premium,
+            disabled,
         });
         this.loadButton = new LoadButton({
             id: `${this.id}-load-button`,
             premium,
+            disabled,
         });
         this.presetNumber = presetNumber;
         this.label = new PresetLabel({
             id: `${this.id}-label`,
             defaultValue: `Preset ${this.presetNumber}`,
+            disabled,
         });
 
         if (!this.hasValue()) {
@@ -32,6 +39,17 @@ export default class PresetRow extends HtmlElement {
 
     toString() {
         return `<tr id="${this.id}"><td align="left">${this.label}</input></td><td align="right">${this.loadButton} ${this.saveButton}</td></tr>`;
+    }
+
+    /**
+     * Allows disabling or enabling this element and all nested elements without refreshing
+     * @function PresetRow#setDisabled
+     */
+    setDisabled(disabled = false) {
+        this.disabled = disabled;
+        this.saveButton.setDisabled(disabled);
+        this.loadButton.setDisabled(disabled);
+        this.label.setDisabled(disabled);
     }
 
     displaySaved() {
@@ -61,7 +79,7 @@ export default class PresetRow extends HtmlElement {
 
                 this.label.save();
 
-                const event = new Event('preset-save');
+                const event = new Event('preset-save', { bubbles: true });
                 this.getElement().dispatchEvent(event);
             });
             this.addLoadEventListener(() => {
@@ -70,7 +88,7 @@ export default class PresetRow extends HtmlElement {
                 }
                 this.displayLoaded();
 
-                const event = new Event('preset-load');
+                const event = new Event('preset-load', { bubbles: true });
                 this.getElement().dispatchEvent(event);
             });
         }

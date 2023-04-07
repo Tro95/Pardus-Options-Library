@@ -1,4 +1,4 @@
-import HtmlElement from './html-element.js';
+import DisablableHtmlElement from './disablable-html-element.js';
 import PardusOptionsUtility from './pardus-options-utility.js';
 import BooleanOption from './options/boolean-option.js';
 import TextAreaOption from './options/text-area-option.js';
@@ -7,18 +7,23 @@ import KeyDownOption from './options/key-down-option.js';
 import SelectOption from './options/select-option.js';
 import GroupedOptions from './options/grouped-options.js';
 
-export default class OptionsGroup extends HtmlElement {
+export default class OptionsGroup extends DisablableHtmlElement {
     constructor({
         id,
         premium = false,
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
+        disabled = false,
     }) {
-        super(id);
+        super({
+            id,
+            disabled,
+        });
         this.premium = premium;
         this.saveFunction = saveFunction;
         this.getFunction = getFunction;
         this.options = [];
+        this.disabled = disabled;
         this.addAfterRefreshHook(() => {
             for (const option of this.options) {
                 option.afterRefreshElement();
@@ -26,9 +31,17 @@ export default class OptionsGroup extends HtmlElement {
         });
     }
 
+    setDisabled(disabled = false) {
+        this.disabled = disabled;
+        for (const option of this.options) {
+            option.setDisabled(disabled);
+        }
+    }
+
     addBooleanOption(args) {
         const newOption = new BooleanOption({
             id: `${this.id}-option-${this.options.length}`,
+            disabled: this.disabled,
             ...args,
         });
         this.options.push(newOption);
@@ -38,6 +51,7 @@ export default class OptionsGroup extends HtmlElement {
     addTextAreaOption(args) {
         const newOption = new TextAreaOption({
             id: `${this.id}-option-${this.options.length}`,
+            disabled: this.disabled,
             ...args,
         });
         this.options.push(newOption);
@@ -47,6 +61,7 @@ export default class OptionsGroup extends HtmlElement {
     addNumericOption(args) {
         const newOption = new NumericOption({
             id: `${this.id}-option-${this.options.length}`,
+            disabled: this.disabled,
             ...args,
         });
         this.options.push(newOption);
@@ -56,6 +71,7 @@ export default class OptionsGroup extends HtmlElement {
     addKeyDownOption(args) {
         const newOption = new KeyDownOption({
             id: `${this.id}-option-${this.options.length}`,
+            disabled: this.disabled,
             ...args,
         });
         this.options.push(newOption);
@@ -65,6 +81,7 @@ export default class OptionsGroup extends HtmlElement {
     addSelectOption(args) {
         const newOption = new SelectOption({
             id: `${this.id}-option-${this.options.length}`,
+            disabled: this.disabled,
             ...args,
         });
         this.options.push(newOption);
@@ -78,6 +95,7 @@ export default class OptionsGroup extends HtmlElement {
     }) {
         const newOption = new GroupedOptions({
             id: `${this.id}-option-${this.options.length}`,
+            disabled: this.disabled,
             description,
             saveFunction,
             getFunction,

@@ -1,11 +1,11 @@
-import HtmlElement from './html-element.js';
+import DisablableHtmlElement from './disablable-html-element.js';
 import PardusOptionsUtility from './pardus-options-utility.js';
 import SaveButtonRow from './save-button-row/save-button-row.js';
 import Presets from './save-button-row/presets.js';
 import OptionsGroup from './options-group.js';
 import DescriptionElement from './description-element.js';
 
-export default class OptionsBox extends HtmlElement {
+export default class OptionsBox extends DisablableHtmlElement {
     constructor({
         id,
         heading,
@@ -18,14 +18,19 @@ export default class OptionsBox extends HtmlElement {
         refresh = true,
         resetButton = false,
         presets = 0,
+        disabled = false,
     }) {
-        super(id);
+        super({
+            id,
+            disabled,
+        });
         this.heading = heading;
         this.premium = premium;
         this.saveFunction = saveFunction;
         this.getFunction = getFunction;
         this.refresh = refresh;
         this.resetButton = resetButton;
+        this.disabled = disabled;
 
         const headerHtml = (premium) ? '<th class="premium">' : '<th>';
         this.frontContainer = `<form id="${this.id}" action="none"><table style="background:url(${PardusOptionsUtility.getImagePackUrl()}bgd.gif)" width="100%" cellpadding="3" align="center"><tbody><tr>${headerHtml}${heading}</th></tr>`;
@@ -42,16 +47,19 @@ export default class OptionsBox extends HtmlElement {
             premium,
             saveFunction,
             getFunction,
+            disabled,
         });
         this.saveButtonRow = new SaveButtonRow({
             id: `${this.id}-save`,
             premium,
             resetButton,
+            disabled,
         });
         this.presets = new Presets({
             id: `${this.id}-presets`,
             premium,
             presets,
+            disabled,
         });
         this.addAfterRefreshHook((opts) => {
             if (opts.maintainRefreshStatus) {
@@ -99,6 +107,17 @@ export default class OptionsBox extends HtmlElement {
         }
 
         this.presets.setFunctions(this.optionsGroup.options);
+    }
+
+    /**
+     * Allows disabling or enabling this element and all nested elements without refreshing
+     * @function OptionsBox#setDisabled
+     */
+    setDisabled(disabled = false) {
+        this.disabled = disabled;
+        this.optionsGroup.setDisabled(disabled);
+        this.saveButtonRow.setDisabled(disabled);
+        this.presets.setDisabled(disabled);
     }
 
     addSaveEventListener(func) {

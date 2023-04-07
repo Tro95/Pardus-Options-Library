@@ -9,6 +9,7 @@ export default class TextAreaOption extends AbstractOption {
         defaultValue = 0,
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
+        disabled = false,
         info = null,
         rows = 3,
         cols = 65,
@@ -21,13 +22,15 @@ export default class TextAreaOption extends AbstractOption {
             saveFunction,
             getFunction,
             info,
+            disabled,
+            styleExtra: 'font-family: Helvetica, Arial, sans-serif;font-size:11px;',
         });
         this.rows = rows;
         this.cols = cols;
     }
 
     getInnerHTML() {
-        return `<textarea id="${this.inputId}" autocomplete="off" autocorrect="off" spellcheck="false" ${(this.rows === 0) ? '' : `rows="${this.rows}"`} ${(this.cols === 0) ? '' : `cols="${this.cols}"`} style="font-family: Helvetica, Arial, sans-serif;background-color:#00001C; color:#D0D1D9; font-size:11px;">${this.getValue()}</textarea>`;
+        return `<textarea id="${this.inputId}" autocomplete="off" autocorrect="off" spellcheck="false" ${(this.rows === 0) ? '' : `rows="${this.rows}"`} ${(this.cols === 0) ? '' : `cols="${this.cols}"`} style="${this.style}" ${this.disabled ? 'disabled' : ''}>${this.getValue()}</textarea>`;
     }
 
     getCurrentValue() {

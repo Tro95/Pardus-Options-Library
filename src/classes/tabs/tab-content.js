@@ -102,6 +102,10 @@ export default class TabContent extends HtmlElement {
         return this.defaultTab.addBox(args);
     }
 
+    addBoxBottom(args) {
+        return this.defaultTab.addBoxBottom(args);
+    }
+
     addBoxTop(args) {
         return this.defaultTab.addBoxTop(args);
     }

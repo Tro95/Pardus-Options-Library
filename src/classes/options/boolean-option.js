@@ -10,7 +10,7 @@ export default class BooleanOption extends AbstractOption {
         if (this.getValue() === true) {
             checkedStatus = ' checked';
         }
-        return `<input id="${this.inputId}" type="checkbox"${checkedStatus}>`;
+        return `<input id="${this.inputId}" type="checkbox"${checkedStatus} style="${this.style}" ${this.disabled ? 'disabled' : ''}>`;
     }
 
     getCurrentValue() {

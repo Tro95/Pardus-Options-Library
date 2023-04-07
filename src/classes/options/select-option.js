@@ -9,6 +9,7 @@ export default class SelectOption extends AbstractOption {
         defaultValue = null,
         saveFunction = PardusOptionsUtility.defaultSaveFunction,
         getFunction = PardusOptionsUtility.defaultGetFunction,
+        disabled = false,
         info = null,
         inheritStyle = false,
         options = [],
@@ -21,6 +22,7 @@ export default class SelectOption extends AbstractOption {
             saveFunction,
             getFunction,
             info,
+            disabled,
         });
         this.options = options;
 
@@ -47,7 +49,7 @@ export default class SelectOption extends AbstractOption {
             }
         }
 
-        selectHtml = `<select id="${this.inputId}"${selectStyle}>${selectHtml}`;
+        selectHtml = `<select id="${this.inputId}"${selectStyle} style="${this.style}" ${this.disabled ? 'disabled' : ''}>${selectHtml}`;
 
         return selectHtml;
     }

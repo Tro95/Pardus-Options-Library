@@ -4,10 +4,12 @@ export default class LoadButton extends AbstractButton {
     constructor({
         id,
         premium = false,
+        disabled = false,
     }) {
         super({
             id,
             premium,
+            disabled,
             actionText: 'Load',
             actionPerformedText: 'Loaded',
         });

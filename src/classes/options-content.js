@@ -18,6 +18,7 @@ export default class OptionsContent extends HtmlElement {
         this.leftBoxes = [];
         this.rightBoxes = [];
         this.topBoxes = [];
+        this.bottomBoxes = [];
         this.refresh = refresh;
         this.active = active;
         this.addAfterRefreshHook((opts) => {
@@ -27,10 +28,16 @@ export default class OptionsContent extends HtmlElement {
             this.refresh = true;
         });
         this.addAfterRefreshHook(() => {
+            for (const box of this.topBoxes) {
+                box.afterRefreshElement();
+            }
             for (const box of this.leftBoxes) {
                 box.afterRefreshElement();
             }
             for (const box of this.rightBoxes) {
+                box.afterRefreshElement();
+            }
+            for (const box of this.bottomBoxes) {
                 box.afterRefreshElement();
             }
         });
@@ -38,16 +45,38 @@ export default class OptionsContent extends HtmlElement {
 
     addBox({
         top = false,
+        bottom = false,
         ...args
     }) {
         let newBox = null;
         if (top) {
             newBox = this.addBoxTop(args);
+        } else if (bottom) {
+            newBox = this.addBoxBottom(args);
         } else if (this.leftBoxes.length <= this.rightBoxes.length) {
             newBox = this.addBoxLeft(args);
         } else {
             newBox = this.addBoxRight(args);
         }
+        return newBox;
+    }
+
+    addBoxBottom({
+        refresh = this.refresh,
+        ...args
+    }) {
+        const newBox = new OptionsBox({
+            id: `${this.id}-bottom-box-${this.bottomBoxes.length}`,
+            refresh,
+            ...args,
+        });
+
+        this.bottomBoxes.push(newBox);
+
+        if (refresh) {
+            this.refreshElement();
+        }
+
         return newBox;
     }
 
@@ -134,7 +163,7 @@ export default class OptionsContent extends HtmlElement {
             return this.content;
         }
         const hidden = this.active ? '' : 'hidden';
-        return `<tr id="${this.id}" ${hidden}><td><table width="100%" align="center"><tbody><tr><td id="${this.id}-top" colspan="3" valign="top">${this.topBoxes.join('<br><br>')}${(this.topBoxes.length > 0) ? '<br><br>' : ''}</td></tr><tr><td id="${this.id}-left" width="350" valign="top">${this.leftBoxes.join('<br><br>')}</td><td width="40"></td><td id="${this.id}-right" width="350" valign="top">${this.rightBoxes.join('<br><br>')}</td></tr></tbody></table></td></tr>`;
+        return `<tr id="${this.id}" ${hidden}><td><table width="100%" align="center"><tbody><tr><td id="${this.id}-top" colspan="3" valign="top">${this.topBoxes.join('<br><br>')}${(this.topBoxes.length > 0) ? '<br><br>' : ''}</td></tr><tr><td id="${this.id}-left" width="350" valign="top">${this.leftBoxes.join('<br><br>')}</td><td width="40"></td><td id="${this.id}-right" width="350" valign="top">${this.rightBoxes.join('<br><br>')}</td></tr><tr><td id="${this.id}-bottom" colspan="3" valign="top">${this.bottomBoxes.join('<br><br>')}${(this.bottomBoxes.length > 0) ? '<br><br>' : ''}</td></tr></tbody></table></td></tr>`;
     }
 
     setActive() {

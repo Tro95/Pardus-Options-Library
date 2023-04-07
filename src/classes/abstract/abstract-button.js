@@ -1,13 +1,19 @@
-import HtmlElement from '../html-element.js';
+import DisablableHtmlElement from '../disablable-html-element.js';
 
-export default class AbstractButton extends HtmlElement {
+export default class AbstractButton extends DisablableHtmlElement {
     constructor({
         id,
         premium = false,
+        disabled = false,
+        styleExtra = '',
         actionText = '',
         actionPerformedText = '',
     }) {
-        super(id);
+        super({
+            id,
+            disabled,
+        });
+
         this.premium = premium;
 
         if (this.premium) {
@@ -16,10 +22,18 @@ export default class AbstractButton extends HtmlElement {
             this.colour = '#D0D1D9';
         }
 
+        this.backgroundColour = '#00001C';
+
+        if (this.disabled) {
+            this.colour = '#B5B5B5';
+            this.backgroundColour = '#CCCCCC';
+        }
+
+        this.styleExtra = styleExtra;
+        this.style = `color: ${this.colour};background-color: ${this.backgroundColour};${this.styleExtra}`;
+
         this.actionText = actionText;
         this.actionPerformedText = actionPerformedText;
-        this.disabled = false;
-        this.style = `color: ${this.colour}`;
     }
 
     toString() {
@@ -47,9 +61,24 @@ export default class AbstractButton extends HtmlElement {
         }, 2000);
     }
 
+    setDisabled(disabled = false) {
+        this.disabled = disabled;
+        if (this.disabled) {
+            this.colour = '#B5B5B5';
+            this.backgroundColour = '#CCCCCC';
+        } else {
+            if (this.premium) {
+                this.colour = '#FFCC11';
+            } else {
+                this.colour = '#D0D1D9';
+            }
+            this.backgroundColour = '#00001C';
+        }
+        this.style = `color: ${this.colour};background-color: ${this.backgroundColour};${this.styleExtra}`;
+    }
+
     disable() {
-        this.disabled = true;
-        this.style = 'color: #B5B5B5;background-color: #CCCCCC;';
+        this.setDisabled(true);
         if (this.getElement()) {
             this.getElement().setAttribute('disabled', 'true');
             this.getElement().setAttribute('style', this.style);
@@ -57,8 +86,7 @@ export default class AbstractButton extends HtmlElement {
     }
 
     enable() {
-        this.disabled = false;
-        this.style = `color: ${this.colour}`;
+        this.setDisabled(false);
         if (this.getElement()) {
             this.getElement().removeAttribute('disabled');
             this.getElement().setAttribute('style', this.style);

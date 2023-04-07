@@ -1,13 +1,13 @@
-import HtmlElement from '../html-element.js';
+import DisablableHtmlElement from '../disablable-html-element.js';
 import InfoElement from '../info-element.js';
 import PardusOptionsUtility from '../pardus-options-utility.js';
 
 /**
  * @class AbstractOption
- * @extends HtmlElement
+ * @extends DisablableHtmlElement
  * @abstract
  */
-export default class AbstractOption extends HtmlElement {
+export default class AbstractOption extends DisablableHtmlElement {
     constructor({
         id,
         variable,
@@ -18,8 +18,13 @@ export default class AbstractOption extends HtmlElement {
         shallow = false,
         reverse = false,
         info = null,
+        disabled = false,
+        styleExtra = '',
     }) {
-        super(id);
+        super({
+            id,
+            disabled,
+        });
         this.variable = variable;
         this.saveFunction = saveFunction;
         this.getFunction = getFunction;
@@ -29,6 +34,16 @@ export default class AbstractOption extends HtmlElement {
         this.inputId = `${this.id}-input`;
         this.shallow = shallow;
         this.reverse = reverse;
+        this.styleExtra = styleExtra;
+        this.colour = '#D0D1D9';
+        this.backgroundColour = '#00001C';
+
+        if (this.disabled) {
+            this.colour = '#B5B5B5';
+            this.backgroundColour = '#CCCCCC';
+        }
+
+        this.style = `color: ${this.colour};background-color: ${this.backgroundColour};${this.styleExtra}`;
 
         if (this.info !== null) {
             this.infoElement = new InfoElement({
@@ -117,9 +132,52 @@ export default class AbstractOption extends HtmlElement {
     saveValue(overrideSaveFunction = null) {
         if (overrideSaveFunction && typeof overrideSaveFunction === 'function') {
             overrideSaveFunction(`${PardusOptionsUtility.getVariableName(this.variable)}`, this.getCurrentValue());
-        } else {
+        } else if (!this.disabled) {
             this.saveFunction(`${PardusOptionsUtility.getVariableName(this.variable)}`, this.getCurrentValue());
         }
+    }
+
+    refreshStyle() {
+        this.style = `color: ${this.colour};background-color: ${this.backgroundColour};${this.styleExtra}`;
+        if (this.getInputElement()) {
+            this.getInputElement().setAttribute('style', this.style);
+        }
+    }
+
+    /**
+     * Disables the input element
+     * @function AbstractOption#disable
+     */
+    disable() {
+        this.setDisabled(true);
+        if (this.getInputElement()) {
+            this.getInputElement().removeAttribute('disabled');
+            this.getInputElement().setAttribute('style', this.style);
+        }
+    }
+
+    /**
+     * Enables the input element
+     * @function AbstractOption#enable
+     */
+    enable() {
+        this.setDisabled(false);
+        if (this.getInputElement()) {
+            this.getInputElement().removeAttribute('disabled');
+            this.getInputElement().setAttribute('style', this.style);
+        }
+    }
+
+    setDisabled(disabled = false) {
+        this.disabled = disabled;
+        if (this.disabled) {
+            this.colour = '#B5B5B5';
+            this.backgroundColour = '#CCCCCC';
+        } else {
+            this.colour = '#D0D1D9';
+            this.backgroundColour = '#00001C';
+        }
+        this.style = `color: ${this.colour};background-color: ${this.backgroundColour};${this.styleExtra}`;
     }
 
     loadValue(value) {
