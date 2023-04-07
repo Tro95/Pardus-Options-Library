@@ -163,7 +163,7 @@ export default class OptionsContent extends HtmlElement {
             return this.content;
         }
         const hidden = this.active ? '' : 'hidden';
-        return `<tr id="${this.id}" ${hidden}><td><table width="100%" align="center"><tbody><tr><td id="${this.id}-top" colspan="3" valign="top">${this.topBoxes.join('<br><br>')}${(this.topBoxes.length > 0) ? '<br><br>' : ''}</td></tr><tr><td id="${this.id}-left" width="350" valign="top">${this.leftBoxes.join('<br><br>')}</td><td width="40"></td><td id="${this.id}-right" width="350" valign="top">${this.rightBoxes.join('<br><br>')}</td></tr><tr><td id="${this.id}-bottom" colspan="3" valign="top">${this.bottomBoxes.join('<br><br>')}${(this.bottomBoxes.length > 0) ? '<br><br>' : ''}</td></tr></tbody></table></td></tr>`;
+        return `<tr id="${this.id}" ${hidden}><td><table width="100%" align="center"><tbody><tr><td id="${this.id}-top" colspan="3" valign="top">${this.topBoxes.join('<br><br>')}${(this.topBoxes.length > 0) ? '<br><br>' : ''}</td></tr><tr><td id="${this.id}-left" width="350" valign="top">${this.leftBoxes.join('<br><br>')}</td><td width="40"></td><td id="${this.id}-right" width="350" valign="top">${this.rightBoxes.join('<br><br>')}</td></tr><tr><td id="${this.id}-bottom" colspan="3" valign="top">${(this.bottomBoxes.length > 0) ? '<br><br>' : ''}${this.bottomBoxes.join('<br><br>')}</td></tr></tbody></table></td></tr>`;
     }
 
     setActive() {
