@@ -7,37 +7,52 @@ export default class KeyDownOption extends AbstractOption {
         this.setKeyButton = new SetKeyButton({
             id: `${this.id}-setkey`,
         });
-        this.addAfterRefreshHook(this.initialSetKeyListener.bind(this));
+        this.boundInitialSetKeyListener = this.initialSetKeyListener.bind(this);
+        this.addAfterRefreshHook(this.boundInitialSetKeyListener);
     }
 
-    initialSetKeyListener() {
-        this.setKeyButton.addEventListener('click', this.setKeyListener.bind(this));
+    initialSetKeyListener(ephemeral = true) {
+        this.setKeyButton.addEventListener('click', this.setKeyListener.bind(this), {
+            once: true,
+            ephemeral,
+        });
     }
 
     setKeyListener() {
         this.setKeyButton.displayClicked(true);
         document.getElementById(`${this.inputId}-key`).value = '_';
         document.getElementById(`${this.inputId}-key`).style.color = 'lime';
-        document.addEventListener('keydown', this.captureKeyListener.bind(this), {
+
+        this.boundCaptureKeyListener = this.captureKeyListener.bind(this);
+        this.boundCancelHandler = this.cancelHandler.bind(this);
+
+        document.addEventListener('keydown', this.boundCaptureKeyListener, {
             once: true,
+            ephemeral: true,
         });
-        this.setKeyButton.addEventListener('click', this.cancelHandler.bind(this));
+        this.setKeyButton.addEventListener('click', this.boundCancelHandler, {
+            once: true,
+            ephemeral: true,
+        });
     }
 
-    captureKeyListener(e) {
+    captureKeyListener(event) {
         this.getInputElement().value = JSON.stringify({
-            code: e.keyCode,
-            key: e.code,
-            description: e.key,
+            code: event.keyCode,
+            key: event.code,
+            description: event.key,
         });
         this.setKeyButton.displayClicked(false);
         document.getElementById(`${this.inputId}-key`).value = this.getCurrentKeyDescription();
         document.getElementById(`${this.inputId}-key`).style.color = '#D0D1D9';
-        this.setKeyButton.removeEventListener('click', this.cancelHandler);
+        this.setKeyButton.removeEventListener('click', this.boundCancelHandler);
+        this.boundInitialSetKeyListener();
     }
 
     cancelHandler() {
-        document.removeEventListener('keydown', this.captureKeyListener);
+        this.setKeyButton.displayClicked(false);
+        document.removeEventListener('keydown', this.boundCaptureKeyListener);
+        this.refreshElement();
     }
 
     getInnerHTML() {

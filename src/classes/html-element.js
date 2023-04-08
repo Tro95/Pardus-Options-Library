@@ -27,14 +27,18 @@ export default class HtmlElement {
      * @param {string} eventName Name of the event to listen for
      * @param {function} listener Listener to call when the event fires
      */
-    addEventListener(eventName, listener) {
+    addEventListener(eventName, listener, opts = false) {
         if (this.getElement()) {
-            this.getElement().addEventListener(eventName, listener, false);
+            this.getElement().addEventListener(eventName, listener, opts);
+        }
+
+        if (opts && Object.hasOwn(opts, 'ephemeral') && opts.ephemeral) {
+            return;
         }
 
         this.addAfterRefreshHook(() => {
             if (this.getElement()) {
-                this.getElement().addEventListener(eventName, listener, false);
+                this.getElement().addEventListener(eventName, listener, opts);
             }
         });
     }
