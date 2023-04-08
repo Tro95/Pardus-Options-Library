@@ -40,6 +40,27 @@ export default class AbstractButton extends DisablableHtmlElement {
         return `<input value="${this.actionText}" id="${this.id}" type="button" style="${this.style}" ${this.disabled ? 'disabled' : ''}>`;
     }
 
+    /**
+     * Add an event listener to the element
+     * @function HtmlElement#addEventListener
+     * @param {function} listener Listener to call when the event fires
+     */
+    addClickListener(listener, opts = false) {
+        if (this.getElement()) {
+            this.getElement().addEventListener('click', listener, opts);
+        }
+
+        if (opts && Object.hasOwn(opts, 'ephemeral') && opts.ephemeral) {
+            return;
+        }
+
+        this.addAfterRefreshHook(() => {
+            if (this.getElement()) {
+                this.getElement().addEventListener('click', listener, opts);
+            }
+        });
+    }
+
     setActionText(actionText = '', actionPerformedText = '') {
         this.actionText = actionText;
         this.actionPerformedText = actionPerformedText;

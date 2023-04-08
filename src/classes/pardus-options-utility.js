@@ -92,6 +92,10 @@ export default class PardusOptionsUtility {
                 throw new Error(`No Pardus variable ${pardusVariable} defined!`);
             }
 
+            if (Object.hasOwn(pardusVariableKey, 'disabled')) {
+                return;
+            }
+
             if (!this.pardusListeners) {
                 this.pardusListeners = [];
             }

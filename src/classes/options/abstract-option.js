@@ -151,7 +151,7 @@ export default class AbstractOption extends DisablableHtmlElement {
     disable() {
         this.setDisabled(true);
         if (this.getInputElement()) {
-            this.getInputElement().removeAttribute('disabled');
+            this.getInputElement().setAttribute('disabled', '');
             this.getInputElement().setAttribute('style', this.style);
         }
     }
