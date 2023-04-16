@@ -23,6 +23,7 @@ export default class SelectOption extends AbstractOption {
             getFunction,
             info,
             disabled,
+            align: 'right',
         });
         this.options = options;
 

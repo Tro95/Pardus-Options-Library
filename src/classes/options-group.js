@@ -107,8 +107,8 @@ export default class OptionsGroup extends DisablableHtmlElement {
     toString() {
         // If no options have been defined, then don't add any elements
         if (this.options.length === 0) {
-            return `<tr id="${this.id}" style="display: none;"><td><table><tbody></tbody></table></td></tr>`;
+            return `<tr id="${this.id}" style="display: none;"><td><table width="100%"><tbody></tbody></table></td></tr>`;
         }
-        return `<tr id="${this.id}"><td><table><tbody>${this.options.join('')}</tbody></table></td></tr>`;
+        return `<tr id="${this.id}"><td><table width="100%"><tbody>${this.options.join('')}</tbody></table></td></tr>`;
     }
 }

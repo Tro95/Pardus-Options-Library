@@ -32,7 +32,7 @@ export default class SaveButtonRow extends DisablableHtmlElement {
     }
 
     toString() {
-        return `<tr id="${this.id}"><td align="right">${(this.resetButton) ? `${this.resetButton}&nbsp` : ''}${this.saveButton}</td></tr>`;
+        return `<tr id="${this.id}"><td align="right" style="padding-right: 6px;">${(this.resetButton) ? `${this.resetButton}&nbsp` : ''}${this.saveButton}</td></tr>`;
     }
 
     /**

@@ -20,6 +20,7 @@ export default class AbstractOption extends DisablableHtmlElement {
         info = null,
         disabled = false,
         styleExtra = '',
+        align = 'left',
     }) {
         super({
             id,
@@ -37,6 +38,7 @@ export default class AbstractOption extends DisablableHtmlElement {
         this.styleExtra = styleExtra;
         this.colour = '#D0D1D9';
         this.backgroundColour = '#00001C';
+        this.align = align;
 
         if (this.disabled) {
             this.colour = '#B5B5B5';
@@ -69,10 +71,10 @@ export default class AbstractOption extends DisablableHtmlElement {
         }
 
         if (this.description === '') {
-            return `<tr id='${this.id}'><td col="2">${this.getInnerHTML()}</td></tr>`;
+            return `<tr id='${this.id}'><td col='2'>${this.getInnerHTML()}</td></tr>`;
         }
 
-        return `<tr id='${this.id}'><td><label for='${this.inputId}'>${this.description}:</label>${this.infoElement}</td><td>${this.getInnerHTML()}</td></tr>`;
+        return `<tr id='${this.id}'><td><label for='${this.inputId}'>${this.description}:</label>${this.infoElement}</td><td align='${this.align}'>${this.getInnerHTML()}</td></tr>`;
     }
 
     /**

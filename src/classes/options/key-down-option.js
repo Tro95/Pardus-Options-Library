@@ -82,8 +82,8 @@ export default class KeyDownOption extends AbstractOption {
     }
 
     getInnerHTML() {
-        let keyPressHtml = `<input id="${this.inputId}" type="text" hidden value='${JSON.stringify(this.getValue())}'>`;
-        keyPressHtml += `<table width="100%"><tbody><tr><td align="left"><input id="${this.inputId}-key" type="text" cols="1" maxlength="1" readonly value="${this.getKeyDescription()}" style="${this.style}" ${this.disabled ? 'disabled' : ''}/></td><td align="right">${this.setKeyButton}</td><td align="right">${this.disableButton}</td></tr></tbody></table>`;
+        let keyPressHtml = `<input id='${this.inputId}' type='text' hidden value='${JSON.stringify(this.getValue())}'>`;
+        keyPressHtml += `<table width='100%' style='border-collapse: collapse;'><tbody><tr><td align="left"><input id='${this.inputId}-key' type='text' cols='1' maxlength='1' readonly value="${this.getKeyDescription()}" style="${this.style}" ${this.disabled ? 'disabled' : ''}/></td><td align="right">${this.setKeyButton}</td><td align="right" style='padding-right: 0px;'>${this.disableButton}</td></tr></tbody></table>`;
         return keyPressHtml;
     }
 
