@@ -1,6 +1,6 @@
 {
   "name": "pardus-options-library",
-  "version": "1.0.0",
+  "version": "2.6.9",
   "description": "The Pardus Options Library is a script designed to add useful and easy ways to interact with  the Options page within other scripts related to the online game Pardus (https://pardus.at).",
   "main": "src/index.js",
   "devDependencies": {
