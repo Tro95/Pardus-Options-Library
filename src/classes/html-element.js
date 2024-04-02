@@ -11,7 +11,7 @@ export default class HtmlElement {
         if (!id || id === '') {
             throw new Error('Id cannot be empty.');
         }
-        const validIds = /^[a-zA-Z][\\w:.-]*$/;
+        const validIds = /^[a-zA-Z][\w:.-]*$/;
         if (!validIds.test(id)) {
             throw new Error(`Id '${id}' is not a valid HTML identifier.`);
         }
