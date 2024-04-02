@@ -11,7 +11,7 @@ export default class HtmlElement {
         if (!id || id === '') {
             throw new Error('Id cannot be empty.');
         }
-        const validIds = RegExp('^[a-zA-Z][\\w:.-]*$');
+        const validIds = /^[a-zA-Z][\\w:.-]*$/;
         if (!validIds.test(id)) {
             throw new Error(`Id '${id}' is not a valid HTML identifier.`);
         }
@@ -176,5 +176,14 @@ export default class HtmlElement {
      */
     appendTableChild(ele) {
         return document.getElementById(this.id).firstChild.appendChild(ele);
+    }
+
+    /**
+     * Sets the innerHTML property of the element
+     * @function HtmlElement#setHTML
+     * @param {html} html to set inside the element
+     */
+    setHTML(html) {
+        this.innerHTML = html;
     }
 }
