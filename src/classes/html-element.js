@@ -184,6 +184,6 @@ export default class HtmlElement {
      * @param {html} html to set inside the element
      */
     setHTML(html) {
-        this.innerHTML = html;
+        this.innerHtml = html;
     }
 }
