@@ -1,11 +1,17 @@
 import HtmlElement from './html-element.js';
 
 /**
- * @class DisablableHtmlElement
+ * @class DisableableHtmlElement
  * @extends HtmlElement
  * @abstract
  */
-export default class DisablableHtmlElement extends HtmlElement {
+export default class DisableableHtmlElement extends HtmlElement {
+    /**
+     * Create an HTML element that can be disabled
+     * @param {object} params Object containing parameters
+     * @param {string} params.id The id of the string. Must be unique.
+     * @param {boolean} params.disabled Whether the element is disabled or not
+     */
     constructor({
         id,
         disabled = false,
@@ -16,7 +22,7 @@ export default class DisablableHtmlElement extends HtmlElement {
 
     /**
      * Disables this element and all nested elements
-     * @function DisablableHtmlElement#disable
+     * @function DisableableHtmlElement#disable
      */
     disable() {
         this.setDisabled(true);
@@ -25,7 +31,7 @@ export default class DisablableHtmlElement extends HtmlElement {
 
     /**
      * Enables this element and all nested elements
-     * @function DisablableHtmlElement#enable
+     * @function DisableableHtmlElement#enable
      */
     enable() {
         this.setDisabled(false);
@@ -34,7 +40,7 @@ export default class DisablableHtmlElement extends HtmlElement {
 
     /**
      * Allows disabling or enabling ths element and all nested elements without refreshing
-     * @function DisablableHtmlElement#setDisabled
+     * @function DisableableHtmlElement#setDisabled
      */
     setDisabled(disabled = false) {
         this.disabled = disabled;

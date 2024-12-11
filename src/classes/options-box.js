@@ -1,11 +1,11 @@
-import DisablableHtmlElement from './disablable-html-element.js';
+import DisableableHtmlElement from './disableable-html-element.js';
 import PardusOptionsUtility from './pardus-options-utility.js';
 import SaveButtonRow from './save-button-row/save-button-row.js';
 import Presets from './save-button-row/presets.js';
 import OptionsGroup from './options-group.js';
 import DescriptionElement from './description-element.js';
 
-export default class OptionsBox extends DisablableHtmlElement {
+export default class OptionsBox extends DisableableHtmlElement {
     constructor({
         id,
         heading,

@@ -1,7 +1,7 @@
-import DisablableHtmlElement from '../disablable-html-element.js';
+import DisableableHtmlElement from '../disableable-html-element.js';
 import PardusOptionsUtility from '../pardus-options-utility.js';
 
-export default class PresetLabel extends DisablableHtmlElement {
+export default class PresetLabel extends DisableableHtmlElement {
     constructor({
         id,
         disabled = false,

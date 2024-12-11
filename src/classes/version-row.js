@@ -1,3 +1,4 @@
+/*eslint camelcase: ["error", {allow: ["GM_info"]}]*/
 import HtmlElement from './html-element.js';
 
 export default class VersionRow extends HtmlElement {

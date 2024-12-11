@@ -13,6 +13,11 @@ export default class BooleanOption extends AbstractOption {
         return `<input id="${this.inputId}" type="checkbox"${checkedStatus} style="${this.style}" ${this.disabled ? 'disabled' : ''}>`;
     }
 
+    /**
+     * Gets the current value of the boolean options element
+     * @function BooleanOption#getCurrentValue
+     * @returns {boolean} Value of the boolean options element
+     */
     getCurrentValue() {
         return this.getInputElement().checked;
     }

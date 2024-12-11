@@ -3,21 +3,21 @@
  */
 export default class PardusOptionsUtility {
     /**
-     * @ignore
+     *  @ignore
      */
     static defaultSaveFunction(key, value) {
         return GM_setValue(key, value);
     }
 
     /**
-     * @ignore
+     *  @ignore
      */
     static defaultGetFunction(key, defaultValue = null) {
         return GM_getValue(key, defaultValue);
     }
 
     /**
-     * @ignore
+     *  @ignore
      */
     static defaultDeleteFunction(key) {
         return GM_deleteValue(key);
@@ -43,6 +43,7 @@ export default class PardusOptionsUtility {
 
     /**
      *  Returns the universe-specific name of a variable
+     *  @ignore
      */
     static getVariableName(variableName) {
         return `${this.getUniverse()}_${variableName}`;
@@ -50,6 +51,9 @@ export default class PardusOptionsUtility {
 
     /**
      *  Returns the universe-specific value of a variable
+     *  @param {string} variableName The name of the universe-specific variable to retrieve
+     *  @param {*} [defaultValue=null] A default value to return if the universe-specific variable has never been set.
+     *  @returns {*} Value of the universe-specific value, or if not set, the default value.
      */
     static getVariableValue(variableName, defaultValue = null) {
         return this.defaultGetFunction(this.getVariableName(variableName), defaultValue);
@@ -57,6 +61,8 @@ export default class PardusOptionsUtility {
 
     /**
      *  Sets the universe-specific value of a variable
+     *  @param {string} variableName The name of the universe-specific variable to set
+     *  @param {*} value The value to set for the universe-specific variable.
      */
     static setVariableValue(variableName, value) {
         return this.defaultSaveFunction(this.getVariableName(variableName), value);
@@ -64,16 +70,24 @@ export default class PardusOptionsUtility {
 
     /**
      *  Deletes the universe-specific value of a variable
+     *  @param {string} variableName The name of the universe-specific variable to delete
      */
     static deleteVariableValue(variableName) {
         return this.defaultDeleteFunction(this.getVariableName(variableName));
     }
 
+    /**
+     *  @ignore
+     */
     static setActiveTab(id) {
         window.localStorage.setItem('pardusOptionsOpenTab', id);
         window.dispatchEvent(new window.Event('storage'));
     }
 
+    /**
+     *  Returns a path to the user's image pack to use as a base for relative image URLs
+     *  @returns {string} Path to the user's iamge pack
+     */
     static getImagePackUrl() {
         const defaultImagePackUrl = '//static.pardus.at/img/std/';
         const imagePackUrl = String(document.querySelector('body').style.backgroundImage).replace(/url\("*|"*\)|[a-z0-9]+\.gif/g, '');
@@ -82,10 +96,10 @@ export default class PardusOptionsUtility {
     }
 
     /**
-     * @ignore
+     *  @ignore
      */
     static addGlobalListeners() {
-        EventTarget.prototype.addPardusKeyDownListener = function addPardusKeyDownListener(pardusVariable, defaultValue = null, listener, options = false) {
+        EventTarget.prototype.addPardusKeyDownListener = function addPardusKeyDownListener(pardusVariable, defaultValue, listener, options = false) {
             const pardusVariableKey = PardusOptionsUtility.getVariableValue(pardusVariable, defaultValue);
 
             if (!pardusVariableKey) {

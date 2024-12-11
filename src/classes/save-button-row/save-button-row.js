@@ -1,8 +1,8 @@
-import DisablableHtmlElement from '../disablable-html-element.js';
+import DisableableHtmlElement from '../disableable-html-element.js';
 import SaveButton from './save-button.js';
 import ResetButton from './reset-button.js';
 
-export default class SaveButtonRow extends DisablableHtmlElement {
+export default class SaveButtonRow extends DisableableHtmlElement {
     constructor({
         id,
         premium = false,

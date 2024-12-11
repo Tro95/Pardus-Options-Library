@@ -1,6 +1,6 @@
-import DisablableHtmlElement from '../disablable-html-element.js';
+import DisableableHtmlElement from '../disableable-html-element.js';
 
-export default class AbstractButton extends DisablableHtmlElement {
+export default class AbstractButton extends DisableableHtmlElement {
     constructor({
         id,
         premium = false,

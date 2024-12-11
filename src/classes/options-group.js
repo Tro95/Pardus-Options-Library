@@ -1,4 +1,4 @@
-import DisablableHtmlElement from './disablable-html-element.js';
+import DisableableHtmlElement from './disableable-html-element.js';
 import PardusOptionsUtility from './pardus-options-utility.js';
 import BooleanOption from './options/boolean-option.js';
 import TextAreaOption from './options/text-area-option.js';
@@ -7,7 +7,7 @@ import KeyDownOption from './options/key-down-option.js';
 import SelectOption from './options/select-option.js';
 import GroupedOptions from './options/grouped-options.js';
 
-export default class OptionsGroup extends DisablableHtmlElement {
+export default class OptionsGroup extends DisableableHtmlElement {
     constructor({
         id,
         premium = false,

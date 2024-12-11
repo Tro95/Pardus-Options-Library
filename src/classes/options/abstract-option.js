@@ -1,13 +1,13 @@
-import DisablableHtmlElement from '../disablable-html-element.js';
+import DisableableHtmlElement from '../disableable-html-element.js';
 import InfoElement from '../info-element.js';
 import PardusOptionsUtility from '../pardus-options-utility.js';
 
 /**
  * @class AbstractOption
- * @extends DisablableHtmlElement
+ * @extends DisableableHtmlElement
  * @abstract
  */
-export default class AbstractOption extends DisablableHtmlElement {
+export default class AbstractOption extends DisableableHtmlElement {
     constructor({
         id,
         variable,

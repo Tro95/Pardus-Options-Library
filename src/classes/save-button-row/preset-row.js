@@ -1,9 +1,9 @@
-import DisablableHtmlElement from '../disablable-html-element.js';
+import DisableableHtmlElement from '../disableable-html-element.js';
 import SaveButton from './save-button.js';
 import LoadButton from './load-button.js';
 import PresetLabel from './preset-label.js';
 
-export default class PresetRow extends DisablableHtmlElement {
+export default class PresetRow extends DisableableHtmlElement {
     constructor({
         id,
         premium = false,
