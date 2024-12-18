@@ -6,7 +6,7 @@ export default class TabLabel extends HtmlElement {
         id,
         heading,
         active = false,
-        padding = '0px',
+        padding = '10px',
     }) {
         super(id);
         this.padding = padding;
@@ -30,7 +30,7 @@ export default class TabLabel extends HtmlElement {
 
     toString() {
         const imageUrl = (this.active) ? 'tabactive' : 'tab';
-        return `<td id="${this.id}" style="background: transparent url(&quot;${PardusOptionsUtility.getImagePackUrl()}${imageUrl}.png&quot;) no-repeat scroll 0% 0%; background-size: cover; cursor: default; padding-left: ${this.padding}; padding-right: ${this.padding}" class="tabcontent">${this.heading}</td>`;
+        return `<td id="${this.id}" style="background: transparent url(&quot;${PardusOptionsUtility.getImagePackUrl()}${imageUrl}.png&quot;) no-repeat scroll 0% 0%; background-size: cover; cursor: default; padding-left: ${this.padding}; padding-right: ${this.padding}; box-sizing: border-box" class="tabcontent">${this.heading}</td>`;
     }
 
     setActive() {
