@@ -26,7 +26,6 @@ export default class InfoElement extends HtmlElement {
         this.tipBoxPosition = tipBoxPosition;
 
         this.addEventListener('mouseover', () => {
-            // eslint-disable-next-line import/no-cycle
             this.tipBox = PardusOptions.getDefaultTipBox();
             this.tipBox.setContents({
                 title: this.title,
