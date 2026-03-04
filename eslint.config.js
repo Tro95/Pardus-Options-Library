@@ -33,6 +33,7 @@ export default defineConfig([
             "class-methods-use-this": "off",
             "no-restricted-syntax": "off",
             "no-use-before-define": "off",
+            "no-undef": "error",
         },
     },
 ]);
